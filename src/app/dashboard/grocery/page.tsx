@@ -577,26 +577,28 @@ export default function GroceryPage() {
       {/* Meal Plan */}
       {mealPlan.length > 0 && (
         <div className="bg-card border border-border rounded-2xl overflow-hidden mb-6">
-          <button
-            onClick={() => setMealPlanOpen((v) => !v)}
-            className="w-full flex items-center justify-between px-5 py-4 hover:bg-surface/50 transition-all"
-          >
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between px-5 py-4 hover:bg-surface/50 transition-all">
+            <button
+              onClick={() => setMealPlanOpen((v) => !v)}
+              className="flex items-center gap-3 flex-1 text-left"
+            >
               <span className="font-display font-bold text-text-primary text-sm">7-Day Meal Plan</span>
               <span className="text-text-muted text-xs font-mono">
                 ~{Math.round(mealPlan.reduce((s, d) => s + d.approx_protein_g, 0) / mealPlan.length)}g protein/day avg
               </span>
-            </div>
+            </button>
             <div className="flex items-center gap-2">
               <button
-                onClick={(e) => { e.stopPropagation(); copyPlan(); }}
+                onClick={copyPlan}
                 className="px-2.5 py-1 rounded-lg border border-border text-text-muted hover:text-lime hover:border-lime/40 text-xs transition-all"
               >
                 {copiedPlan ? "✓ Copied" : "Copy"}
               </button>
-              <span className={`text-text-muted text-xs transition-transform ${mealPlanOpen ? "rotate-180" : ""}`}>▾</span>
+              <button onClick={() => setMealPlanOpen((v) => !v)} className="text-text-muted text-xs">
+                <span className={`inline-block transition-transform ${mealPlanOpen ? "rotate-180" : ""}`}>▾</span>
+              </button>
             </div>
-          </button>
+          </div>
           {mealPlanOpen && (
             <div className="border-t border-border overflow-x-auto">
               <div className="flex gap-0 min-w-max">
