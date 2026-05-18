@@ -1,0 +1,160 @@
+import { NextRequest, NextResponse } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+const TOOL: Anthropic.Tool = {
+  name: "suggest_menu_items",
+  description: "Suggest healthier menu items at a restaurant based on user goals and budget.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      restaurant_name: { type: "string" },
+      data_source: { type: "string", description: "Where the menu data came from: 'web_fetch', 'user_provided', 'training_data', or 'unknown'" },
+      confidence: { type: "string", enum: ["high", "medium", "low"] },
+      items: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            name:          { type: "string" },
+            category:      { type: "string" },
+            calories:      { type: "integer" },
+            protein_g:     { type: "number" },
+            carbs_g:       { type: "number" },
+            fat_g:         { type: "number" },
+            sodium_mg:     { type: "integer" },
+            price:         { type: "number" },
+            customization: { type: "string" },
+            why:           { type: "string" },
+          },
+          required: ["name", "category", "calories", "protein_g", "carbs_g", "fat_g", "sodium_mg", "price", "customization", "why"],
+        },
+      },
+      tips:  { type: "array", items: { type: "string" } },
+      avoid: { type: "array", items: { type: "string" } },
+      menu_note: { type: "string", description: "Brief note if menu data is limited or uncertain" },
+    },
+    required: ["restaurant_name", "data_source", "confidence", "items", "tips", "avoid"],
+  },
+};
+
+// Try to fetch real menu text from the restaurant's website or a menu aggregator
+async function tryFetchMenuText(name: string, location: string): Promise<string | null> {
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const city = location.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+  // Sites to try — ordered by most likely to have real menu data
+  const urls = [
+    `https://www.allmenus.com/${city}/-/${slug}-/menu/`,
+    `https://www.menupages.com/restaurants/${slug}/menu`,
+    `https://www.grubhub.com/restaurant/${slug}-${city}/menu`,
+    `https://www.doordash.com/store/${slug}-${city}/`,
+    `https://www.yelp.com/menu/${slug}-${city}`,
+  ];
+
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept": "text/html,application/xhtml+xml",
+        },
+        signal: AbortSignal.timeout(6000),
+      });
+      if (!res.ok) continue;
+      const html = await res.text();
+      // Strip tags and collapse whitespace — keep only meaningful text
+      const text = html
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+
+      // Only use if the page seems to actually have menu content
+      if (text.length > 500 && (
+        /\$\d|\d+ cal|calories|protein|carb/i.test(text) ||
+        /(appetizer|entree|sandwich|salad|bowl|burger|pasta|pizza|soup|side|dessert)/i.test(text)
+      )) {
+        // Return first 4000 chars — enough for Claude to work with
+        return text.slice(0, 4000);
+      }
+    } catch { continue; }
+  }
+  return null;
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const { restaurant, location, budget, goals, weight_kg, pastedMenu, menuImageBase64, menuImageType } = await req.json();
+    if (!restaurant?.trim()) return NextResponse.json({ error: "Restaurant name required" }, { status: 400 });
+
+    const budgetNote = budget ? `Budget: $${budget} for the meal.` : "No budget constraint — recommend the best options regardless of price.";
+    const goalNote = goals?.length ? `User goals: ${goals.join(", ")}.` : "Focus on high protein and low calorie density.";
+    const weightNote = weight_kg ? `User weighs ${weight_kg}kg.` : "";
+    const locationNote = location?.trim() ? `Location: ${location.trim()}.` : "";
+
+    let menuContext = "";
+    let dataSource = "training_data";
+
+    if (menuImageBase64) {
+      // Image scan takes priority — Claude will read it directly
+      dataSource = "user_provided";
+    } else if (pastedMenu?.trim()) {
+      menuContext = `\n\nMENU PROVIDED BY USER:\n${pastedMenu.slice(0, 5000)}`;
+      dataSource = "user_provided";
+    } else {
+      const fetched = await tryFetchMenuText(restaurant, location || "");
+      if (fetched) {
+        menuContext = `\n\nMENU DATA FETCHED FROM WEB:\n${fetched}`;
+        dataSource = "web_fetch";
+      }
+    }
+
+    const promptText = `You are a sports nutrition advisor helping someone eat healthy at a specific restaurant.
+
+Restaurant: "${restaurant}"
+${locationNote}
+${budgetNote}
+${goalNote}
+${weightNote}
+${menuContext || ""}
+
+${menuImageBase64
+  ? "The user has provided a photo of the menu. Read every item and price from it carefully, then select the healthiest picks."
+  : menuContext
+    ? "Use the menu data above to identify real items and their nutritional content. Estimate macros if not listed."
+    : `Use your knowledge of this restaurant. If it's a local/niche restaurant you're not certain about, set confidence to "low" and note what you do/don't know. Never make up menu items — if you don't know the menu, say so in menu_note and provide general guidance instead.`
+}
+
+Call suggest_menu_items with 4-6 healthy picks that fit the budget. Focus on: high protein, lower calorie density, real item names. Include practical order customizations.`;
+
+    const userContent: Anthropic.MessageParam["content"] = menuImageBase64
+      ? [
+          {
+            type: "image",
+            source: { type: "base64", media_type: menuImageType ?? "image/jpeg", data: menuImageBase64 },
+          },
+          { type: "text", text: promptText },
+        ]
+      : promptText;
+
+    const response = await client.messages.create({
+      model: "claude-opus-4-7",
+      max_tokens: 2048,
+      system: "You are a sports nutrition advisor who helps people eat healthy at restaurants. Always call the suggest_menu_items tool. Be honest about your confidence level — never invent menu items you aren't sure about.",
+      tools: [TOOL],
+      tool_choice: { type: "any" },
+      messages: [{ role: "user", content: userContent }],
+    });
+
+    const block = response.content.find((b) => b.type === "tool_use");
+    if (!block || block.type !== "tool_use") return NextResponse.json({ error: "Could not analyze restaurant" }, { status: 500 });
+
+    return NextResponse.json({ ...(block.input as Record<string, unknown>), data_source: dataSource });
+  } catch (err) {
+    console.error("Restaurant menu error:", err);
+    return NextResponse.json({ error: "Analysis failed" }, { status: 500 });
+  }
+}

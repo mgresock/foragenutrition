@@ -1,0 +1,27 @@
+{
+  "name": "Forage — Hunt Smart. Eat Better.",
+  "short_name": "Forage",
+  "description": "AI-powered nutrition tracking, grocery savings, and goal-based meal planning.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0c0e09",
+  "theme_color": "#0c0e09",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/api/icon/192",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/api/icon/512",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["health", "fitness", "food"]
+}
