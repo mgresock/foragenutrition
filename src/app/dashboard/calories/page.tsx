@@ -122,6 +122,35 @@ function EntryDetailModal({ entry, onClose, onDelete }: { entry: MealLog; onClos
   if (entry.calories < 300) insightTags.push({ text: "light meal", color: "text-text-muted" });
   if (entry.calories > 700) insightTags.push({ text: "high calorie", color: "text-text-muted" });
 
+  const roles: { icon: string; title: string; desc: string; color: string }[] = [];
+  if (entry.protein_g >= 20) {
+    roles.push(proteinQuality === "complete"
+      ? { icon: "💪", title: "Muscle Protein Synthesis", desc: `${entry.protein_g}g complete protein — all essential amino acids trigger muscle repair and growth.`, color: "text-lime" }
+      : { icon: "💪", title: "Muscle Support", desc: `${entry.protein_g}g protein toward your daily target. Pair with a complete source for full amino acid coverage.`, color: "text-lime" });
+  } else if (entry.protein_g >= 10) {
+    roles.push({ icon: "💪", title: "Protein Contribution", desc: `${entry.protein_g}g — partial contribution toward your daily muscle-building target.`, color: "text-lime" });
+  }
+  if (entry.carbs_g >= 20) {
+    const carbDescs: Record<string, { title: string; desc: string }> = {
+      complex: { title: "Sustained Energy", desc: `${entry.carbs_g}g slow-release carbs fuel workouts and replenish muscle glycogen steadily.` },
+      simple: { title: "Rapid Glycogen Refuel", desc: `${entry.carbs_g}g fast carbs — ideal 30–60 min post-workout to spike insulin and restore glycogen.` },
+      mixed: { title: "Mixed Energy", desc: `${entry.carbs_g}g blend of fast and slow carbs — initial boost with sustained follow-through.` },
+    };
+    const c = carbDescs[carbType] ?? carbDescs.mixed;
+    roles.push({ icon: "⚡", title: c.title, desc: c.desc, color: "text-amber-app" });
+  }
+  if (fiber >= 5) {
+    roles.push({ icon: "🌾", title: "Gut & Blood Sugar", desc: `${fiber}g fiber slows digestion, stabilizes blood sugar, and feeds beneficial gut bacteria.`, color: "text-text-secondary" });
+  }
+  if (entry.fat_g >= 8) {
+    roles.push(unsatFat >= satFat
+      ? { icon: "🫀", title: "Hormone & Recovery Support", desc: `${entry.fat_g}g healthy fats support testosterone and absorption of vitamins A, D, E, and K.`, color: "text-cyan-app" }
+      : { icon: "🔥", title: "Dense Energy", desc: `${entry.fat_g}g fat — high-calorie fuel. Saturated fat is elevated; balance with unsaturated sources over the day.`, color: "text-cyan-app" });
+  }
+  if (meta.sodium_mg && meta.sodium_mg > 800) {
+    roles.push({ icon: "💧", title: "Electrolyte Replenishment", desc: `${meta.sodium_mg}mg sodium helps replace electrolytes lost during training. Stay hydrated.`, color: "text-text-secondary" });
+  }
+
   const sourceLabel: Record<string, string> = {
     ai_photo: "Photo", ai_describe: "Described", ai_brand: "Brand", manual: "Manual",
   };
@@ -255,6 +284,24 @@ function EntryDetailModal({ entry, onClose, onDelete }: { entry: MealLog; onClos
             </div>
           </div>
         </div>
+
+        {/* What this produces */}
+        {roles.length > 0 && (
+          <div className="bg-card border border-border rounded-2xl p-4 mb-3">
+            <p className="text-xs text-text-muted uppercase tracking-wider mb-3">What this produces</p>
+            <div className="space-y-3">
+              {roles.map((role) => (
+                <div key={role.title} className="flex items-start gap-3">
+                  <span className="text-base flex-shrink-0 mt-0.5">{role.icon}</span>
+                  <div>
+                    <p className={`text-xs font-semibold mb-0.5 ${role.color}`}>{role.title}</p>
+                    <p className="text-text-muted text-xs leading-snug">{role.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Sodium */}
         {meta.sodium_mg != null && (
