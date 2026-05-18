@@ -116,15 +116,30 @@ GROCERY LIST: List every specific item needed (including cooking staples). Be sp
 
 Stay within the weekly budget. Focus on high protein-per-dollar: chicken breast, eggs, Greek yogurt, canned tuna/salmon, ground turkey, cottage cheese.`;
 
-      const response = await client.messages.create({
+      let response = await client.messages.create({
         model: "claude-haiku-4-5-20251001",
         max_tokens: 4000,
+        system: "You are a gym nutrition assistant. You MUST call the create_weekly_plan tool with a complete 7-day meal plan and full grocery list. Never respond with plain text.",
         tools: [GENERATE_TOOL],
-        tool_choice: { type: "any" },
+        tool_choice: { type: "tool", name: "create_weekly_plan" },
         messages: [{ role: "user", content: prompt }],
       });
 
-      const toolBlock = response.content.find((b) => b.type === "tool_use");
+      let toolBlock = response.content.find((b) => b.type === "tool_use");
+
+      // Retry once if no tool block returned
+      if (!toolBlock) {
+        response = await client.messages.create({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 4000,
+          system: "You are a gym nutrition assistant. You MUST call the create_weekly_plan tool. Fill every required field.",
+          tools: [GENERATE_TOOL],
+          tool_choice: { type: "tool", name: "create_weekly_plan" },
+          messages: [{ role: "user", content: prompt }],
+        });
+        toolBlock = response.content.find((b) => b.type === "tool_use");
+      }
+
       if (!toolBlock || toolBlock.type !== "tool_use") {
         return NextResponse.json({ error: "AI did not return structured data" }, { status: 500 });
       }
