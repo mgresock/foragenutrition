@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ForageSpinner } from "@/components/ui/ForageSpinner";
 import { fetchNearbyRestaurants, type NearbyRestaurant } from "@/lib/overpass";
+import Link from "next/link";
 
 interface MenuItem {
   name: string;
@@ -143,6 +144,8 @@ export default function RestaurantsPage() {
   // User prefs
   const [goals, setGoals] = useState<string[]>([]);
   const [weightKg, setWeightKg] = useState<number | null>(null);
+  const [userTier, setUserTier] = useState<"free" | "pro">("free");
+  const [userEmail, setUserEmail] = useState("");
 
   // Discover section
   const [discoverZip, setDiscoverZip] = useState("");
@@ -228,12 +231,14 @@ export default function RestaurantsPage() {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      setUserEmail(user.email ?? "");
       const [{ data: ob }, { data: pr }] = await Promise.all([
         supabase.from("onboarding").select("goals, zip_code").eq("user_id", user.id).single(),
-        supabase.from("profiles").select("weight_kg, zip_code").eq("id", user.id).single(),
+        supabase.from("profiles").select("weight_kg, zip_code, subscription_tier").eq("id", user.id).single(),
       ]);
       if (ob?.goals) setGoals(ob.goals);
       if (pr?.weight_kg) setWeightKg(pr.weight_kg);
+      setUserTier((pr?.subscription_tier as "free" | "pro") ?? "free");
       const zip = pr?.zip_code || ob?.zip_code;
       if (zip) {
         setDiscoverZip(zip);
@@ -507,7 +512,16 @@ export default function RestaurantsPage() {
                 {/* Photo scan */}
                 <div>
                   <p className="text-[10px] text-text-muted uppercase tracking-wider mb-2">Scan a photo</p>
-                  {menuImagePreview ? (
+                  {(userTier !== "pro" && userEmail.toLowerCase() !== "mcgresock@gmail.com") ? (
+                    <Link href="/dashboard/settings/billing"
+                      className="flex items-center justify-center gap-2 w-full py-3 border border-dashed border-border rounded-xl text-text-muted text-sm hover:border-lime/40 hover:text-lime transition-all">
+                      <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                        <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+                        <path d="M8 11V7a4 4 0 018 0v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
+                      Pro — upgrade to scan menu photos
+                    </Link>
+                  ) : menuImagePreview ? (
                     <div className="relative">
                       <img src={menuImagePreview} alt="Menu" className="w-full max-h-48 object-cover rounded-xl border border-lime/30" />
                       <button
@@ -536,7 +550,6 @@ export default function RestaurantsPage() {
                           reader.onload = (ev) => {
                             const dataUrl = ev.target?.result as string;
                             setMenuImagePreview(dataUrl);
-                            // Strip the data:image/...;base64, prefix
                             setMenuImageBase64(dataUrl.split(",")[1]);
                           };
                           reader.readAsDataURL(file);
