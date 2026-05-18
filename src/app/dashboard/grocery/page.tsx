@@ -392,15 +392,20 @@ export default function GroceryPage() {
           </div>
           <p className="text-text-secondary">Pick your stores, then let AI build the list.</p>
         </div>
-        <button
-          onClick={() => generateList(list.length > 0)}
-          disabled={generating || loadingList}
-          className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-lime text-canvas font-display font-bold text-sm rounded-xl hover:bg-lime-glow transition-all shadow-lime-sm disabled:opacity-50"
-        >
-          {generating ? (
-            <><ForageSpinner size={14} onLight />Building...</>
-          ) : list.length > 0 ? "↺ Regenerate" : "✦ Generate My List"}
-        </button>
+        <div className="flex flex-col items-end gap-1">
+          <button
+            onClick={() => generateList(list.length > 0)}
+            disabled={generating || loadingList || selectedStores.length === 0}
+            className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-lime text-canvas font-display font-bold text-sm rounded-xl hover:bg-lime-glow transition-all shadow-lime-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {generating ? (
+              <><ForageSpinner size={14} onLight />Building...</>
+            ) : list.length > 0 ? "↺ Regenerate" : "✦ Generate My List"}
+          </button>
+          {selectedStores.length === 0 && !generating && (
+            <p className="text-text-muted text-xs">Select a store first</p>
+          )}
+        </div>
       </div>
 
       {/* Store finder */}
