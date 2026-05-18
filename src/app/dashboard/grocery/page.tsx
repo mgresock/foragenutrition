@@ -644,7 +644,7 @@ export default function GroceryPage() {
             <ForageSpinner size={20} />
             <span className="text-text-secondary text-sm font-medium">Building your meal plan + grocery list…</span>
           </div>
-          <p className="text-text-muted text-xs">Claude is planning 7 days of meals and the exact items to buy. This takes ~10 seconds.</p>
+          <p className="text-text-muted text-xs">Planning 7 days of meals and the exact items to buy. This takes ~10 seconds.</p>
           <div className="mt-6 grid grid-cols-3 gap-3">
             {[1,2,3].map((i) => <div key={i} className="h-12 bg-surface border border-border rounded-xl animate-pulse" />)}
           </div>
