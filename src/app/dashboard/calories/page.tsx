@@ -610,7 +610,7 @@ export default function CaloriesPage() {
                 </svg>
               </div>
               <h3 className="font-display font-bold text-text-primary text-lg mb-2">Pro Feature</h3>
-              <p className="text-text-secondary text-sm mb-1 max-w-xs mx-auto">AI photo scanning uses Claude Vision and is available on Pro.</p>
+              <p className="text-text-secondary text-sm mb-1 max-w-xs mx-auto">AI photo scanning uses Forage Vision and is available on Pro.</p>
               <p className="text-text-muted text-xs mb-6 max-w-xs mx-auto">Use the Describe or Brand tabs to log food for free.</p>
               <Link href="/dashboard/settings/billing" className="inline-block px-6 py-3 bg-lime text-canvas font-display font-bold rounded-xl hover:bg-lime-glow transition-all shadow-lime-sm text-sm">
                 Upgrade to Pro — $7.99/mo
@@ -633,7 +633,7 @@ export default function CaloriesPage() {
                 {analyzing && (
                   <div className="absolute inset-0 bg-canvas/80 flex flex-col items-center justify-center gap-3">
                     <ForageSpinner size={36} />
-                    <p className="text-lime text-sm font-mono">Analyzing with Claude Vision...</p>
+                    <p className="text-lime text-sm font-mono">Analyzing with Forage Vision...</p>
                   </div>
                 )}
               </div>
@@ -681,7 +681,7 @@ export default function CaloriesPage() {
                 rows={4}
                 className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-text-primary placeholder-text-muted text-sm focus:outline-none focus:border-lime/50 transition-all resize-none leading-relaxed"
               />
-              <p className="text-text-muted text-xs mt-2">Be as specific as possible — portion sizes, cooking method, and ingredients help Claude estimate more accurately.</p>
+              <p className="text-text-muted text-xs mt-2">Be as specific as possible — portion sizes, cooking method, and ingredients help Forage estimate more accurately.</p>
             </div>
 
             <button
@@ -775,7 +775,7 @@ export default function CaloriesPage() {
 
             <div className="flex items-start gap-3 bg-surface border border-border rounded-xl px-4 py-3">
               <span className="text-lime text-sm mt-0.5">✦</span>
-              <p className="text-text-muted text-xs leading-relaxed">Works great for restaurants, protein bars, packaged foods, supplements, and fast food. Claude knows nutrition labels for thousands of products.</p>
+              <p className="text-text-muted text-xs leading-relaxed">Works great for restaurants, protein bars, packaged foods, supplements, and fast food. Forage knows nutrition labels for thousands of products.</p>
             </div>
 
             <button
@@ -795,7 +795,7 @@ export default function CaloriesPage() {
             <div className="bg-lime/5 border border-lime/30 rounded-2xl p-5 animate-fade-in">
               <div className="flex items-center gap-2 mb-4">
                 <div className="px-2 py-0.5 bg-lime/10 border border-lime/30 rounded text-lime text-xs font-mono">BRAND DATA</div>
-                <span className="text-text-muted text-xs">via Claude AI</span>
+                <span className="text-text-muted text-xs">via Forage AI</span>
               </div>
               <h3 className="font-display font-bold text-text-primary text-lg mb-3">{aiResult.name}</h3>
               <div className="grid grid-cols-4 gap-3 mb-4">

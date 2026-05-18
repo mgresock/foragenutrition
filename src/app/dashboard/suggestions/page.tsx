@@ -139,7 +139,7 @@ export default function SuggestionsPage() {
           onClick={() => setShowInput((v) => !v)}
         >
           <div>
-            <p className="text-text-primary font-medium text-sm">Tell Claude what you've been eating</p>
+            <p className="text-text-primary font-medium text-sm">Tell Forage what you've been eating</p>
             <p className="text-text-muted text-xs mt-0.5">Add context beyond your logged meals for more accurate suggestions</p>
           </div>
           <span className={`text-text-muted text-xs transition-transform flex-shrink-0 ${showInput ? "rotate-180" : ""}`}>▾</span>

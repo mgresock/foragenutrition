@@ -777,7 +777,7 @@ export default function GroceryPage() {
               <div className="p-4 border-b border-border flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-lime animate-pulse-slow" />
                 <span className="text-text-secondary text-sm font-medium">Grocery Assistant</span>
-                <span className="ml-auto text-text-muted text-xs font-mono">Claude AI</span>
+                <span className="ml-auto text-text-muted text-xs font-mono">Forage AI</span>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {chatMessages.map((msg, i) => (
