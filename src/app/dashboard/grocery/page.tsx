@@ -99,6 +99,10 @@ export default function GroceryPage() {
   const [mealPlan, setMealPlan] = useState<MealDay[]>([]);
   const [mealPlanOpen, setMealPlanOpen] = useState(true);
 
+  // Copy feedback
+  const [copiedList, setCopiedList] = useState(false);
+  const [copiedPlan, setCopiedPlan] = useState(false);
+
   // Chat
   const [chatLoading, setChatLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState<{ role: "user" | "ai"; text: string }[]>([
@@ -224,6 +228,39 @@ export default function GroceryPage() {
       }
     }
     setLoadingList(false);
+  };
+
+  const copyList = () => {
+    const categories = ["Protein", "Carbs", "Produce", "Dairy", "Fats", "Other"];
+    const lines = [`GROCERY LIST — $${totalCost.toFixed(2)} total\n`];
+    for (const cat of categories) {
+      const items = list.filter((i) => i.category === cat);
+      if (!items.length) continue;
+      lines.push(cat.toUpperCase());
+      for (const item of items) {
+        const store = item.store ? ` (${item.store})` : "";
+        lines.push(`• ${item.name} × ${item.quantity} — $${item.estimatedPrice.toFixed(2)}${store}`);
+      }
+      lines.push("");
+    }
+    navigator.clipboard.writeText(lines.join("\n"));
+    setCopiedList(true);
+    setTimeout(() => setCopiedList(false), 2000);
+  };
+
+  const copyPlan = () => {
+    const lines = ["7-DAY MEAL PLAN\n"];
+    for (const day of mealPlan) {
+      lines.push(`${day.day.toUpperCase()} (~${day.approx_calories} cal · ${day.approx_protein_g}g protein)`);
+      lines.push(`  Breakfast: ${day.breakfast}`);
+      lines.push(`  Lunch: ${day.lunch}`);
+      lines.push(`  Dinner: ${day.dinner}`);
+      if (day.snack) lines.push(`  Snack: ${day.snack}`);
+      lines.push("");
+    }
+    navigator.clipboard.writeText(lines.join("\n"));
+    setCopiedPlan(true);
+    setTimeout(() => setCopiedPlan(false), 2000);
   };
 
   const generateList = async (regenerate = false) => {
@@ -550,7 +587,15 @@ export default function GroceryPage() {
                 ~{Math.round(mealPlan.reduce((s, d) => s + d.approx_protein_g, 0) / mealPlan.length)}g protein/day avg
               </span>
             </div>
-            <span className={`text-text-muted text-xs transition-transform ${mealPlanOpen ? "rotate-180" : ""}`}>▾</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={(e) => { e.stopPropagation(); copyPlan(); }}
+                className="px-2.5 py-1 rounded-lg border border-border text-text-muted hover:text-lime hover:border-lime/40 text-xs transition-all"
+              >
+                {copiedPlan ? "✓ Copied" : "Copy"}
+              </button>
+              <span className={`text-text-muted text-xs transition-transform ${mealPlanOpen ? "rotate-180" : ""}`}>▾</span>
+            </div>
           </button>
           {mealPlanOpen && (
             <div className="border-t border-border overflow-x-auto">
@@ -664,13 +709,23 @@ export default function GroceryPage() {
               placeholder="Search items..."
               className="w-full bg-surface border border-border rounded-xl px-4 py-2.5 text-text-primary placeholder-text-muted text-sm focus:outline-none focus:border-lime/50 transition-all"
             />
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
               {CATEGORIES.filter((cat) => cat === "All" || list.some((i) => i.category === cat)).map((cat) => (
                 <button key={cat} onClick={() => setFilter(cat)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${filter === cat ? "bg-lime/10 border border-lime/40 text-lime" : "bg-surface border border-border text-text-muted hover:border-border-bright hover:text-text-secondary"}`}>
                   {cat}
                 </button>
               ))}
+              <button
+                onClick={copyList}
+                className="ml-auto px-3 py-1.5 rounded-lg border border-border text-text-muted hover:text-lime hover:border-lime/40 text-xs font-medium transition-all flex items-center gap-1.5"
+              >
+                {copiedList ? (
+                  <><span>✓</span> Copied!</>
+                ) : (
+                  <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 16 16"><rect x="5" y="5" width="9" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3"/><path d="M3 11V3a1 1 0 011-1h8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg> Copy List</>
+                )}
+              </button>
             </div>
 
             <div className="bg-card border border-border rounded-2xl overflow-hidden">
