@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { ForageSpinner } from "@/components/ui/ForageSpinner";
 
 interface NutritionMeta {
   fiber_g?: number;
@@ -610,7 +611,7 @@ export default function CaloriesPage() {
                 <img src={imagePreview} alt="food" className="w-full max-h-64 object-cover" />
                 {analyzing && (
                   <div className="absolute inset-0 bg-canvas/80 flex flex-col items-center justify-center gap-3">
-                    <div className="w-8 h-8 border-2 border-lime/30 border-t-lime rounded-full animate-spin" />
+                    <ForageSpinner size={36} />
                     <p className="text-lime text-sm font-mono">Analyzing with Claude Vision...</p>
                   </div>
                 )}
@@ -668,7 +669,7 @@ export default function CaloriesPage() {
               className="w-full flex items-center justify-center gap-2 bg-lime/10 border border-lime/30 hover:border-lime/50 rounded-xl py-3 text-lime font-medium text-sm transition-all hover:bg-lime/15 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {analyzing ? (
-                <><span className="w-4 h-4 border-2 border-lime/30 border-t-lime rounded-full animate-spin" />Analyzing...</>
+                <><ForageSpinner size={16} />Analyzing...</>
               ) : (
                 <><svg className="w-4 h-4" fill="none" viewBox="0 0 16 16"><path d="M8 2a6 6 0 100 12A6 6 0 008 2zm0 2v4l3 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>Estimate with AI</>
               )}
@@ -762,7 +763,7 @@ export default function CaloriesPage() {
               className="w-full flex items-center justify-center gap-2 bg-lime/10 border border-lime/30 hover:border-lime/50 rounded-xl py-3 text-lime font-medium text-sm transition-all hover:bg-lime/15 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {analyzing ? (
-                <><span className="w-4 h-4 border-2 border-lime/30 border-t-lime rounded-full animate-spin" />Looking up nutrition facts...</>
+                <><ForageSpinner size={16} />Looking up nutrition facts...</>
               ) : (
                 <>🔍 Look Up Nutrition Facts</>
               )}

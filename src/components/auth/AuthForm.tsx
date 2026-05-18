@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { ForageSpinner } from "@/components/ui/ForageSpinner";
 
 interface AuthFormProps {
   mode: "signin" | "signup";
@@ -127,7 +128,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         >
           {loading ? (
             <>
-              <span className="w-4 h-4 border-2 border-canvas/30 border-t-canvas rounded-full animate-spin" />
+              <ForageSpinner size={16} onLight />
               {mode === "signin" ? "Signing in..." : "Creating account..."}
             </>
           ) : mode === "signin" ? "Sign In" : "Create Account"}

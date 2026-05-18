@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { ForageSpinner } from "@/components/ui/ForageSpinner";
 import { OnboardingShell } from "@/components/onboarding/OnboardingShell";
 
 export default function LocationPage() {
@@ -50,7 +51,7 @@ export default function LocationPage() {
               className="flex-1 bg-surface border border-border rounded-xl px-4 py-3 text-text-primary placeholder-text-muted text-sm focus:outline-none focus:border-lime/50 focus:shadow-lime-sm transition-all num font-mono tracking-[0.2em] text-lg" />
             <button onClick={verifyZip} disabled={zip.length < 5 || loading}
               className="px-5 py-3 bg-surface border border-border rounded-xl text-sm text-text-secondary hover:border-border-bright hover:text-text-primary transition-all disabled:opacity-40">
-              {loading ? <span className="w-4 h-4 border-2 border-text-muted/30 border-t-text-secondary rounded-full animate-spin block" /> : "Verify"}
+              {loading ? <ForageSpinner size={16} /> : "Verify"}
             </button>
           </div>
         </div>
@@ -77,7 +78,7 @@ export default function LocationPage() {
 
         <button onClick={handleNext} disabled={!verified || loading}
           className="w-full bg-lime text-canvas font-display font-bold py-4 rounded-xl uppercase tracking-wider hover:bg-lime-glow transition-all shadow-lime-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-          {loading ? <><span className="w-4 h-4 border-2 border-canvas/30 border-t-canvas rounded-full animate-spin" />Saving...</> : "Continue →"}
+          {loading ? <><ForageSpinner size={16} onLight />Saving...</> : "Continue →"}
         </button>
 
         <button onClick={() => router.push("/onboarding/budget")} className="w-full py-3 text-text-muted text-sm hover:text-text-secondary transition-colors">

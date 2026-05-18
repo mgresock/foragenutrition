@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import { ForageSpinner } from "@/components/ui/ForageSpinner";
 
 type Profile = {
   id: string;
@@ -263,7 +264,7 @@ export default function SocialPage() {
   if (loading) {
     return (
       <div className="px-6 py-8 flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 border-2 border-lime/30 border-t-lime rounded-full animate-spin" />
+        <ForageSpinner size={36} />
       </div>
     );
   }

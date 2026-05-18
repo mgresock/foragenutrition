@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { ForageSpinner } from "@/components/ui/ForageSpinner";
 import { fetchNearbyRestaurants, type NearbyRestaurant } from "@/lib/overpass";
 
 interface MenuItem {
@@ -336,7 +337,7 @@ export default function RestaurantsPage() {
               title="Use my current location"
             >
               {geoLocating
-                ? <span className="w-4 h-4 border-2 border-canvas/30 border-t-canvas rounded-full animate-spin block" />
+                ? <ForageSpinner size={16} onLight />
                 : <svg className="w-4 h-4" fill="none" viewBox="0 0 20 20"><circle cx="10" cy="10" r="3" fill="currentColor"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5"/></svg>
               }
               <span className="hidden sm:inline">{geoLocating ? "Locating…" : "Use My Location"}</span>
@@ -355,7 +356,7 @@ export default function RestaurantsPage() {
               className="px-5 py-3 bg-surface border border-border text-text-secondary font-display font-bold text-sm rounded-xl hover:border-lime/40 hover:text-lime transition-all disabled:opacity-40 flex-shrink-0"
             >
               {nearbyLoading
-                ? <span className="w-4 h-4 border-2 border-border border-t-text-primary rounded-full animate-spin block" />
+                ? <ForageSpinner size={16} />
                 : "Find"}
             </button>
           </div>
@@ -571,7 +572,7 @@ export default function RestaurantsPage() {
             className="w-full py-3.5 bg-lime text-canvas font-display font-bold text-sm rounded-xl hover:bg-lime-glow transition-all disabled:opacity-40"
           >
             {loading
-              ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-canvas/30 border-t-canvas rounded-full animate-spin" /> Analyzing…</span>
+              ? <span className="flex items-center justify-center gap-2"><ForageSpinner size={16} onLight /> Analyzing…</span>
               : "Analyze Restaurant"}
           </button>
 
@@ -594,7 +595,7 @@ export default function RestaurantsPage() {
       {loading && (
         <div className="space-y-3">
           <div className="flex items-center gap-3 p-5 bg-card border border-border rounded-2xl">
-            <span className="w-5 h-5 border-2 border-lime/30 border-t-lime rounded-full animate-spin flex-shrink-0" />
+            <ForageSpinner size={20} />
             <p className="text-text-secondary text-sm">Searching menu data for {restaurantInput}…</p>
           </div>
           {[1, 2, 3].map((i) => <div key={i} className="h-24 bg-card border border-border rounded-2xl animate-pulse" />)}

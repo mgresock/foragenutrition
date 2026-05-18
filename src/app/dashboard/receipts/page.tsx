@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { ForageSpinner } from "@/components/ui/ForageSpinner";
 
 interface ReceiptItem { id: string; name: string; price: number; category: string; healthy: boolean | null; }
 interface Receipt { id: string; store: string; receipt_date: string; total: number; ai_insight: string; image_path: string | null; items?: ReceiptItem[]; }
@@ -109,7 +110,7 @@ export default function ReceiptsPage() {
           <button onClick={() => fileRef.current?.click()}
             className="w-full flex items-center justify-center gap-3 bg-lime/10 border border-lime/30 hover:border-lime/50 rounded-2xl py-4 text-lime font-medium text-sm transition-all hover:bg-lime/15 group">
             {scanning ? (
-              <><span className="w-4 h-4 border-2 border-lime/30 border-t-lime rounded-full animate-spin" />Scanning...</>
+              <><ForageSpinner size={16} />Scanning...</>
             ) : (
               <><svg className="w-5 h-5" fill="none" viewBox="0 0 20 20"><path d="M10 4v8M6 8l4-4 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M3 14v2a1 1 0 001 1h12a1 1 0 001-1v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>Scan New Receipt</>
             )}

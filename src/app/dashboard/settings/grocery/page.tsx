@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { ForageSpinner } from "@/components/ui/ForageSpinner";
 import Link from "next/link";
 
 const QUICK_PICKS = [50, 100, 150, 200, 300, 500];
@@ -111,7 +112,7 @@ export default function EditGroceryPage() {
 
         <button onClick={handleSave} disabled={loading}
           className="w-full bg-lime text-canvas font-display font-bold py-4 rounded-xl uppercase tracking-wider hover:bg-lime-glow transition-all shadow-lime-sm disabled:opacity-40 flex items-center justify-center gap-2">
-          {loading ? <><span className="w-4 h-4 border-2 border-canvas/30 border-t-canvas rounded-full animate-spin" />Saving...</> : "Save Changes"}
+          {loading ? <><ForageSpinner size={16} onLight />Saving...</> : "Save Changes"}
         </button>
       </div>
     </div>

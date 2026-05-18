@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import { ForageSpinner } from "@/components/ui/ForageSpinner";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 
 type Unit = "imperial" | "metric";
@@ -153,7 +154,7 @@ export default function EditProfilePage() {
             </div>
             {avatarUploading && (
               <div className="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center">
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <ForageSpinner size={20} onLight />
               </div>
             )}
           </button>
@@ -219,7 +220,7 @@ export default function EditProfilePage() {
 
         <button onClick={handleSave} disabled={!isValid || loading}
           className="w-full bg-lime text-canvas font-display font-bold py-4 rounded-xl uppercase tracking-wider hover:bg-lime-glow transition-all shadow-lime-sm disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-          {loading ? <><span className="w-4 h-4 border-2 border-canvas/30 border-t-canvas rounded-full animate-spin" />Saving...</> : "Save Changes"}
+          {loading ? <><ForageSpinner size={16} onLight />Saving...</> : "Save Changes"}
         </button>
       </div>
     </div>
