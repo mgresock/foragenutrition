@@ -100,7 +100,7 @@ function BillingContent() {
               <span className="font-display font-black text-2xl text-canvas">7-Day Free Trial</span>
               <span className="px-2.5 py-1 bg-canvas/20 rounded-lg text-canvas text-xs font-bold">FREE</span>
             </div>
-            <p className="text-canvas/70 text-sm mb-1">Then $6.99/month — cancel anytime before trial ends</p>
+            <p className="text-canvas/70 text-sm mb-1">Then $7.99/month — cancel anytime before trial ends</p>
             <p className="text-canvas/60 text-xs">Unlimited AI · Restaurant picks · Whoop sync · All Pro features</p>
             {upgrading === "trial" && <p className="text-canvas/80 text-xs mt-2 font-medium">Redirecting to checkout…</p>}
           </button>
@@ -116,7 +116,7 @@ function BillingContent() {
             className="w-full p-5 bg-card border border-border rounded-2xl hover:border-lime/30 transition-all text-left group disabled:opacity-50">
             <div className="flex items-center justify-between mb-1">
               <span className="font-display font-bold text-text-primary group-hover:text-lime transition-colors">Monthly</span>
-              <span className="num font-display font-black text-2xl text-lime">$6.99<span className="text-text-muted text-sm font-normal">/mo</span></span>
+              <span className="num font-display font-black text-2xl text-lime">$7.99<span className="text-text-muted text-sm font-normal">/mo</span></span>
             </div>
             <p className="text-text-muted text-xs">Unlimited AI · Restaurant picks · Whoop sync · Vitamin tracking</p>
             {upgrading === "monthly" && <p className="text-lime text-xs mt-2">Redirecting to checkout…</p>}
@@ -128,9 +128,9 @@ function BillingContent() {
             <span className="absolute top-3 right-3 px-2 py-0.5 bg-lime/20 border border-lime/30 rounded text-lime text-[10px] font-bold">BEST VALUE</span>
             <div className="flex items-center justify-between mb-1">
               <span className="font-display font-bold text-text-primary group-hover:text-lime transition-colors">Yearly</span>
-              <span className="num font-display font-black text-2xl text-lime">$59.99<span className="text-text-muted text-sm font-normal">/yr</span></span>
+              <span className="num font-display font-black text-2xl text-lime">$69.99<span className="text-text-muted text-sm font-normal">/yr</span></span>
             </div>
-            <p className="text-text-muted text-xs">Everything in Monthly · Save $24/year vs monthly</p>
+            <p className="text-text-muted text-xs">Everything in Monthly · Save $26/year vs monthly</p>
             {upgrading === "yearly" && <p className="text-lime text-xs mt-2">Redirecting to checkout…</p>}
           </button>
         </div>
@@ -142,7 +142,9 @@ function BillingContent() {
         <div className="space-y-3">
           {[
             { feature: "Calorie & macro tracking", free: true, pro: true },
-            { feature: "AI food analysis (photo, describe, brand)", free: "15/month", pro: "Unlimited" },
+            { feature: "AI food analysis — describe & brand", free: "15/month", pro: "Unlimited" },
+            { feature: "AI food analysis — photo scan", free: false, pro: true },
+            { feature: "Receipt scanner", free: false, pro: true },
             { feature: "Grocery AI list builder", free: "15/month", pro: "Unlimited" },
             { feature: "Restaurant healthy picks", free: false, pro: true },
             { feature: "Vitamin & mineral tracking", free: true, pro: true },

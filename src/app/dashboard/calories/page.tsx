@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ForageSpinner } from "@/components/ui/ForageSpinner";
+import Link from "next/link";
 
 interface NutritionMeta {
   fiber_g?: number;
@@ -328,6 +329,8 @@ export default function CaloriesPage() {
   const [productName, setProductName] = useState("");
   const [servingSize, setServingSize] = useState("");
   const [describeSource, setDescribeSource] = useState<"ai_photo" | "ai_describe" | "ai_brand">("ai_photo");
+  const [userTier, setUserTier] = useState<"free" | "pro">("free");
+  const [userEmail, setUserEmail] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const aiResultFromData = (data: Record<string, unknown>) => ({
@@ -357,6 +360,9 @@ export default function CaloriesPage() {
   const loadLogs = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    setUserEmail(user.email ?? "");
+    const { data: profile } = await supabase.from("profiles").select("subscription_tier").eq("id", user.id).single();
+    setUserTier((profile?.subscription_tier as "free" | "pro") ?? "free");
     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
     const { data } = await supabase.from("meal_logs")
@@ -595,7 +601,22 @@ export default function CaloriesPage() {
 
       {activeTab === "camera" && (
         <div className="space-y-4">
-          {!imagePreview ? (
+          {(userTier !== "pro" && userEmail.toLowerCase() !== "mcgresock@gmail.com") ? (
+            <div className="bg-card border border-border rounded-2xl p-12 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-lime/10 border border-lime/20 flex items-center justify-center mx-auto mb-4">
+                <svg className="w-6 h-6 text-lime" fill="none" viewBox="0 0 24 24">
+                  <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M8 11V7a4 4 0 018 0v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <h3 className="font-display font-bold text-text-primary text-lg mb-2">Pro Feature</h3>
+              <p className="text-text-secondary text-sm mb-1 max-w-xs mx-auto">AI photo scanning uses Claude Vision and is available on Pro.</p>
+              <p className="text-text-muted text-xs mb-6 max-w-xs mx-auto">Use the Describe or Brand tabs to log food for free.</p>
+              <Link href="/dashboard/settings/billing" className="inline-block px-6 py-3 bg-lime text-canvas font-display font-bold rounded-xl hover:bg-lime-glow transition-all shadow-lime-sm text-sm">
+                Upgrade to Pro — $7.99/mo
+              </Link>
+            </div>
+          ) : !imagePreview ? (
             <div onClick={() => fileRef.current?.click()}
               className="border-2 border-dashed border-border rounded-2xl p-12 text-center cursor-pointer hover:border-lime/40 hover:bg-lime/5 transition-all group">
               <div className="text-5xl mb-4">📷</div>

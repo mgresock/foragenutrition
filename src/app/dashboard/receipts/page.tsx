@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ForageSpinner } from "@/components/ui/ForageSpinner";
+import Link from "next/link";
 
 interface ReceiptItem { id: string; name: string; price: number; category: string; healthy: boolean | null; }
 interface Receipt { id: string; store: string; receipt_date: string; total: number; ai_insight: string; image_path: string | null; items?: ReceiptItem[]; }
@@ -19,11 +20,16 @@ export default function ReceiptsPage() {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [selected, setSelected] = useState<Receipt | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [userTier, setUserTier] = useState<"free" | "pro">("free");
+  const [userEmail, setUserEmail] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const loadReceipts = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    setUserEmail(user.email ?? "");
+    const { data: profile } = await supabase.from("profiles").select("subscription_tier").eq("id", user.id).single();
+    setUserTier((profile?.subscription_tier as "free" | "pro") ?? "free");
     const { data } = await supabase.from("receipts").select("*").eq("user_id", user.id).order("scanned_at", { ascending: false });
     if (data) { setReceipts(data); if (data.length > 0 && !selected) loadReceiptWithItems(data[0]); }
   };
@@ -107,15 +113,33 @@ export default function ReceiptsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="lg:col-span-2 space-y-3">
-          <button onClick={() => fileRef.current?.click()}
-            className="w-full flex items-center justify-center gap-3 bg-lime/10 border border-lime/30 hover:border-lime/50 rounded-2xl py-4 text-lime font-medium text-sm transition-all hover:bg-lime/15 group">
-            {scanning ? (
-              <><ForageSpinner size={16} />Scanning...</>
-            ) : (
-              <><svg className="w-5 h-5" fill="none" viewBox="0 0 20 20"><path d="M10 4v8M6 8l4-4 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M3 14v2a1 1 0 001 1h12a1 1 0 001-1v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>Scan New Receipt</>
-            )}
-          </button>
-          <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handleScan} className="hidden" />
+          {(userTier !== "pro" && userEmail.toLowerCase() !== "mcgresock@gmail.com") ? (
+            <div className="bg-card border border-border rounded-2xl p-6 text-center">
+              <div className="w-10 h-10 rounded-xl bg-lime/10 border border-lime/20 flex items-center justify-center mx-auto mb-3">
+                <svg className="w-5 h-5 text-lime" fill="none" viewBox="0 0 24 24">
+                  <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M8 11V7a4 4 0 018 0v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <p className="font-display font-bold text-text-primary text-sm mb-1">Pro Feature</p>
+              <p className="text-text-muted text-xs mb-4">Receipt scanning requires Forage Pro.</p>
+              <Link href="/dashboard/settings/billing" className="inline-block px-4 py-2 bg-lime text-canvas font-display font-bold rounded-xl hover:bg-lime-glow transition-all text-xs">
+                Upgrade to Pro
+              </Link>
+            </div>
+          ) : (
+            <>
+              <button onClick={() => fileRef.current?.click()}
+                className="w-full flex items-center justify-center gap-3 bg-lime/10 border border-lime/30 hover:border-lime/50 rounded-2xl py-4 text-lime font-medium text-sm transition-all hover:bg-lime/15 group">
+                {scanning ? (
+                  <><ForageSpinner size={16} />Scanning...</>
+                ) : (
+                  <><svg className="w-5 h-5" fill="none" viewBox="0 0 20 20"><path d="M10 4v8M6 8l4-4 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M3 14v2a1 1 0 001 1h12a1 1 0 001-1v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>Scan New Receipt</>
+                )}
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handleScan} className="hidden" />
+            </>
+          )}
 
           {receipts.length === 0 && !scanning && (
             <div className="text-center py-8 text-text-muted text-sm">No receipts yet. Scan one above.</div>
