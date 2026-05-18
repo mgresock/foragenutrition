@@ -143,7 +143,7 @@ Call suggest_menu_items with 4-6 healthy picks that fit the budget. Focus on: hi
       : promptText;
 
     const response = await client.messages.create({
-      model: "claude-opus-4-7",
+      model: "claude-haiku-4-5-20251001",
       max_tokens: 2048,
       system: "You are a sports nutrition advisor who helps people eat healthy at restaurants. Always call the suggest_menu_items tool. Be honest about your confidence level — never invent menu items you aren't sure about.",
       tools: [TOOL],

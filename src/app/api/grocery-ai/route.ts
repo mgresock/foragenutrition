@@ -117,7 +117,7 @@ GROCERY LIST: List every specific item needed (including cooking staples). Be sp
 Stay within the weekly budget. Focus on high protein-per-dollar: chicken breast, eggs, Greek yogurt, canned tuna/salmon, ground turkey, cottage cheese.`;
 
       const response = await client.messages.create({
-        model: "claude-opus-4-7",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 4000,
         tools: [GENERATE_TOOL],
         tool_choice: { type: "any" },
@@ -140,7 +140,7 @@ Current grocery list: ${JSON.stringify(currentList || [])}
 Be concise and specific. Prioritize protein-dense, budget-friendly swaps. Keep replies under 3 sentences unless listing items.`;
 
     const response = await client.messages.create({
-      model: "claude-opus-4-7",
+      model: "claude-haiku-4-5-20251001",
       max_tokens: 400,
       system: systemPrompt,
       messages: (messages || []).map((m: { role: string; text: string }) => ({
