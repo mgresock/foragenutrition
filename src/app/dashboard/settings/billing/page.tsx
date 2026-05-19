@@ -137,7 +137,7 @@ function BillingContent() {
             <button key={p} onClick={() => setPlan(p)}
               className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${plan === p ? "bg-lime text-canvas font-semibold" : "text-text-secondary hover:text-text-primary"}`}>
               {p === "monthly" ? "Monthly" : "Yearly"}
-              {p === "yearly" && <span className="ml-1.5 text-[10px] px-1.5 py-0.5 bg-lime/20 text-lime rounded-full">Save 28%</span>}
+              {p === "yearly" && <span className="ml-1.5 text-[10px] px-1.5 py-0.5 bg-lime/20 text-lime rounded-full">Save 27%</span>}
             </button>
           ))}
         </div>
@@ -171,9 +171,9 @@ function BillingContent() {
             {tier === "pro" && <span className="text-[10px] px-2 py-0.5 bg-lime/10 border border-lime/20 rounded-full text-lime mr-10">Current</span>}
           </div>
           <p className="num font-display font-black text-3xl text-lime mb-4">
-            {plan === "monthly" || tier === "pro" ? "$6.99" : "$4.99"}
+            {plan === "monthly" || tier === "pro" ? "$7.99" : "$5.83"}
             <span className="text-text-muted text-sm font-normal">/mo</span>
-            {plan === "yearly" && tier === "free" && <span className="text-text-muted text-xs font-normal ml-1">billed $59.99/yr</span>}
+            {plan === "yearly" && tier === "free" && <span className="text-text-muted text-xs font-normal ml-1">billed $69.99/yr</span>}
           </p>
           <div className="space-y-2 mb-4">
             {FEATURES_PRO.map((f) => (
