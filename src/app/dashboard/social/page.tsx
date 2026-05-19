@@ -123,6 +123,7 @@ export default function SocialPage() {
   const supabase = createClient();
 
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [tier, setTier] = useState<"free" | "pro">("free");
   const [friends, setFriends] = useState<FriendProgress[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,10 +150,13 @@ export default function SocialPage() {
 
     const { data: prof } = await supabase
       .from("profiles")
-      .select("id, display_name, avatar_url, friend_code")
+      .select("id, display_name, avatar_url, friend_code, subscription_tier")
       .eq("id", user.id)
       .single();
-    if (prof) setProfile(prof);
+    if (prof) {
+      setProfile(prof);
+      setTier((prof.subscription_tier as "free" | "pro") ?? "free");
+    }
 
     // Load friend progress via server API (bypasses RLS to read friends' logs)
     try {
@@ -294,7 +298,14 @@ export default function SocialPage() {
             <UserAvatar src={profile?.avatar_url} size={96} className="ring-4 ring-lime/20" />
             <div className="text-center">
               <div className="font-display font-bold text-xl text-text-primary">{profile?.display_name || "You"}</div>
-              <div className="text-text-muted text-sm mt-1">Forage Member</div>
+              <div className="flex items-center gap-1.5 mt-1">
+                {tier === "pro" && (
+                  <span className="px-1.5 py-0.5 bg-lime/10 border border-lime/20 rounded-full text-lime text-[10px] font-medium">PRO</span>
+                )}
+                <span className="text-text-muted text-sm">
+                  {tier === "pro" ? "Premium Forage Member" : "Forage Member"}
+                </span>
+              </div>
             </div>
           </div>
 
