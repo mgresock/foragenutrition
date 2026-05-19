@@ -59,17 +59,6 @@ const NAV = [
       </svg>
     ),
   },
-  {
-    href: "/dashboard/settings",
-    label: "Settings",
-    shortLabel: "Settings",
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 20 20">
-        <circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5" />
-        <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-    ),
-  },
 ];
 
 const SIDEBAR_EXTRA = [
@@ -165,7 +154,21 @@ export function Sidebar() {
           })}
         </nav>
 
-        <div className="p-3 border-t border-border">
+        <div className="p-3 border-t border-border space-y-0.5">
+          <Link href="/dashboard/settings"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all group ${
+              isActive("/dashboard/settings")
+                ? "bg-lime/10 text-lime border border-lime/20"
+                : "text-text-secondary hover:text-text-primary hover:bg-card border border-transparent"
+            }`}>
+            <span className={`transition-colors flex-shrink-0 ${isActive("/dashboard/settings") ? "text-lime" : "text-text-muted group-hover:text-text-secondary"}`}>
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 20 20">
+                <circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </span>
+            <span className="font-medium">Settings</span>
+          </Link>
           <Link href="/dashboard/social" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-card transition-all">
             <UserAvatar src={profile?.avatar_url} size={32} className="ring-2 ring-border flex-shrink-0" />
             <div className="flex-1 min-w-0">
