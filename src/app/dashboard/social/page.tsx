@@ -160,7 +160,9 @@ export default function SocialPage() {
       .single();
     if (prof) {
       setProfile(prof);
-      setTier((prof.subscription_tier as "free" | "pro") ?? "free");
+      const devEmails = ["mcgresock@gmail.com"];
+      const effectiveTier = devEmails.includes(user.email ?? "") ? "pro" : ((prof.subscription_tier as "free" | "pro") ?? "free");
+      setTier(effectiveTier);
     }
 
     // Load friend progress via server API (bypasses RLS to read friends' logs)
