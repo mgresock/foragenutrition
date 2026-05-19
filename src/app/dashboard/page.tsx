@@ -108,6 +108,8 @@ export default function DashboardPage() {
   const [insights, setInsights] = useState<Insight[] | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [showInsights, setShowInsights] = useState(false);
+  const [tier, setTier] = useState<"free" | "pro" | null>(null);
+  const [aiRemaining, setAiRemaining] = useState<number | null>(null);
   const [waterMl, setWaterMl] = useState(0);
   const [customWaterInput, setCustomWaterInput] = useState("");
   const [supplements, setSupplements] = useState<Supplement[]>([]);
@@ -143,17 +145,24 @@ export default function DashboardPage() {
       const sevenDaysAgo = new Date(); sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const [{ data: logsData }, { data: profileData }, { data: onboardingData }, { data: recentLogs }, { data: streakLogs }] = await Promise.all([
+      const [{ data: logsData }, { data: profileData }, { data: onboardingData }, { data: recentLogs }, { data: streakLogs }, { data: tierData }] = await Promise.all([
         supabase.from("meal_logs").select("id, name, calories, protein_g, carbs_g, fat_g, logged_at, nutrition_meta").eq("user_id", user.id).gte("logged_at", todayStart.toISOString()).lte("logged_at", todayEnd.toISOString()).order("logged_at", { ascending: false }),
         supabase.from("profiles").select("display_name, avatar_url").eq("id", user.id).single(),
         supabase.from("onboarding").select("goals, meals_per_week").eq("user_id", user.id).single(),
         supabase.from("meal_logs").select("name, calories, protein_g, carbs_g, fat_g, logged_at").eq("user_id", user.id).gte("logged_at", sevenDaysAgo.toISOString()).order("logged_at", { ascending: false }),
         supabase.from("meal_logs").select("logged_at").eq("user_id", user.id).gte("logged_at", thirtyDaysAgo.toISOString()),
+        supabase.from("profiles").select("subscription_tier, ai_requests_month").eq("id", user.id).single(),
       ]);
 
       if (logsData) setLogs(logsData);
       if (profileData) setProfile(profileData);
       if (onboardingData) setOnboarding(onboardingData);
+      if (tierData) {
+        setTier((tierData.subscription_tier as "free" | "pro") ?? "free");
+        if (tierData.subscription_tier !== "pro") {
+          setAiRemaining(Math.max(0, 15 - (tierData.ai_requests_month ?? 0)));
+        }
+      }
 
       // Streak
       if (streakLogs) {
@@ -303,6 +312,27 @@ export default function DashboardPage() {
 
       {/* Fun fact — slim banner */}
       <DailyFact />
+
+      {/* Free plan upgrade nudge */}
+      {tier === "free" && (
+        <Link href="/dashboard/settings/billing"
+          className="flex items-center justify-between gap-3 px-4 py-3 mb-4 bg-lime/5 border border-lime/20 rounded-xl hover:bg-lime/10 hover:border-lime/30 transition-all group">
+          <div className="flex items-center gap-3">
+            <span className="text-lg">⚡</span>
+            <div>
+              <p className="text-text-primary text-sm font-medium">
+                {aiRemaining === 0
+                  ? "AI limit reached — upgrade to continue"
+                  : `${aiRemaining} AI request${aiRemaining === 1 ? "" : "s"} left this month`}
+              </p>
+              <p className="text-text-muted text-xs">Forage Pro · unlimited AI · $6.99/mo</p>
+            </div>
+          </div>
+          <span className="text-lime text-sm font-display font-bold group-hover:text-lime-glow transition-colors flex-shrink-0">
+            Upgrade →
+          </span>
+        </Link>
+      )}
 
       {/* Calorie ring + macros */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
