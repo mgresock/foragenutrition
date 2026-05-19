@@ -53,7 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body className="bg-canvas text-text-primary font-body antialiased">
+      <body className="bg-canvas text-text-primary font-body antialiased" suppressHydrationWarning>
         {children}
       </body>
     </html>

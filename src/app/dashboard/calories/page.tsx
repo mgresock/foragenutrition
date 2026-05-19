@@ -352,6 +352,127 @@ function EntryDetailModal({ entry, onClose, onDelete }: { entry: MealLog; onClos
   );
 }
 
+const ITEM_COLORS = ["#b6f040", "#40c8f0", "#f0a030", "#a78bfa", "#f472b6", "#34d399", "#fb923c"];
+
+interface MealGroup { label: string; emoji: string; entries: MealLog[]; }
+
+function MealGroupModal({ group, onClose, onSelectEntry }: { group: MealGroup; onClose: () => void; onSelectEntry: (e: MealLog) => void }) {
+  const totalCals = group.entries.reduce((s, e) => s + e.calories, 0);
+  const totalProtein = group.entries.reduce((s, e) => s + e.protein_g, 0);
+  const totalCarbs = group.entries.reduce((s, e) => s + e.carbs_g, 0);
+  const totalFat = group.entries.reduce((s, e) => s + e.fat_g, 0);
+  const totalSodium = group.entries.reduce((s, e) => s + (e.nutrition_meta?.sodium_mg ?? 0), 0);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="relative w-full lg:max-w-md bg-surface border border-border rounded-t-3xl lg:rounded-3xl p-6 pb-8 lg:pb-6 z-10 max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="w-10 h-1 bg-border rounded-full mx-auto mb-5 lg:hidden" />
+
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xl">{group.emoji}</span>
+              <h2 className="font-display font-bold text-xl text-text-primary">{group.label}</h2>
+            </div>
+            <p className="text-text-muted text-xs mt-1">{group.entries.length} item{group.entries.length !== 1 ? "s" : ""} · tap any to see full detail</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center text-text-muted hover:text-text-primary text-sm flex-shrink-0">✕</button>
+        </div>
+
+        {/* Meal totals */}
+        <div className="bg-card border border-border rounded-2xl p-4 mb-5">
+          <p className="text-text-muted text-xs uppercase tracking-wider mb-3">Meal Total</p>
+          <div className="grid grid-cols-4 gap-2 mb-3">
+            {[
+              { label: "Calories", value: totalCals, unit: "kcal", color: "text-text-primary" },
+              { label: "Protein", value: Math.round(totalProtein), unit: "g", color: "text-lime" },
+              { label: "Carbs", value: Math.round(totalCarbs), unit: "g", color: "text-amber-app" },
+              { label: "Fat", value: Math.round(totalFat), unit: "g", color: "text-cyan-app" },
+            ].map((s) => (
+              <div key={s.label} className="text-center">
+                <p className={`num font-display font-bold text-lg leading-none ${s.color}`}>{s.value}</p>
+                <p className="text-text-muted text-xs mt-0.5">{s.unit}</p>
+                <p className="text-text-muted text-[10px]">{s.label}</p>
+              </div>
+            ))}
+          </div>
+          {totalSodium > 0 && (
+            <p className="text-text-muted text-xs text-center mt-1">{totalSodium}mg sodium total</p>
+          )}
+          {/* Calorie share bar */}
+          {totalCals > 0 && (
+            <div className="flex h-2 rounded-full overflow-hidden gap-px mt-3">
+              {group.entries.map((e, i) => (
+                <div key={e.id} style={{ width: `${(e.calories / totalCals) * 100}%`, background: ITEM_COLORS[i % ITEM_COLORS.length] }} />
+              ))}
+            </div>
+          )}
+          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+            {group.entries.map((e, i) => (
+              <div key={e.id} className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: ITEM_COLORS[i % ITEM_COLORS.length] }} />
+                <span className="text-text-muted text-[10px] truncate max-w-[100px]">{e.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Per-item breakdown */}
+        <p className="text-text-muted text-xs uppercase tracking-wider mb-3">Item Breakdown</p>
+        <div className="space-y-3">
+          {group.entries.map((entry, i) => {
+            const calPct = totalCals > 0 ? Math.round((entry.calories / totalCals) * 100) : 0;
+            const sodium = entry.nutrition_meta?.sodium_mg;
+            return (
+              <button
+                key={entry.id}
+                className="w-full bg-card border border-border rounded-2xl p-4 text-left hover:border-border-bright transition-all"
+                onClick={() => { onClose(); onSelectEntry(entry); }}
+              >
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: ITEM_COLORS[i % ITEM_COLORS.length] }} />
+                    <p className="text-text-primary text-sm font-medium leading-snug">{entry.name}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="num font-display font-bold text-text-primary text-base leading-none">{entry.calories}</p>
+                    <p className="text-text-muted text-[10px]">{calPct}% of meal</p>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  {[
+                    { label: "Protein", val: entry.protein_g, total: totalProtein, color: "bg-lime", textColor: "text-lime", unit: "g" },
+                    { label: "Carbs", val: entry.carbs_g, total: totalCarbs, color: "bg-amber-app", textColor: "text-amber-app", unit: "g" },
+                    { label: "Fat", val: entry.fat_g, total: totalFat, color: "bg-cyan-app", textColor: "text-cyan-app", unit: "g" },
+                  ].map((m) => (
+                    <div key={m.label} className="flex items-center gap-2">
+                      <span className="text-text-muted text-[10px] w-10 flex-shrink-0">{m.label}</span>
+                      <div className="flex-1 h-1.5 bg-canvas rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${m.color}`} style={{ width: `${m.total > 0 ? Math.round((m.val / m.total) * 100) : 0}%` }} />
+                      </div>
+                      <span className={`text-[10px] font-mono font-semibold ${m.textColor} w-8 text-right flex-shrink-0`}>{m.val}{m.unit}</span>
+                    </div>
+                  ))}
+                  {sodium ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-text-muted text-[10px] w-10 flex-shrink-0">Sodium</span>
+                      <div className="flex-1 h-1.5 bg-canvas rounded-full overflow-hidden">
+                        <div className="h-full rounded-full bg-text-secondary/40" style={{ width: `${Math.min(100, totalSodium > 0 ? Math.round((sodium / totalSodium) * 100) : 0)}%` }} />
+                      </div>
+                      <span className="text-[10px] font-mono font-semibold text-text-secondary w-8 text-right flex-shrink-0">{sodium}mg</span>
+                    </div>
+                  ) : null}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 type Tab = "log" | "camera" | "describe" | "brand" | "manual";
 
 export default function CaloriesPage() {
@@ -371,6 +492,7 @@ export default function CaloriesPage() {
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<MealLog | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<MealGroup | null>(null);
   const [describeText, setDescribeText] = useState("");
   const [brandName, setBrandName] = useState("");
   const [productName, setProductName] = useState("");
@@ -378,7 +500,21 @@ export default function CaloriesPage() {
   const [describeSource, setDescribeSource] = useState<"ai_photo" | "ai_describe" | "ai_brand">("ai_photo");
   const [userTier, setUserTier] = useState<"free" | "pro">("free");
   const [userEmail, setUserEmail] = useState("");
+  const [selectedDate, setSelectedDate] = useState<Date>(() => { const d = new Date(); d.setHours(0,0,0,0); return d; });
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const isToday = selectedDate.getTime() === today.getTime();
+
+  const formatDate = (d: Date) => {
+    if (d.getTime() === today.getTime()) return "Today";
+    const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+    if (d.getTime() === yesterday.getTime()) return "Yesterday";
+    return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  };
+
+  const goToPrevDay = () => { setActiveTab("log"); setSelectedDate(d => { const p = new Date(d); p.setDate(p.getDate() - 1); return p; }); };
+  const goToNextDay = () => { if (!isToday) { setActiveTab("log"); setSelectedDate(d => { const n = new Date(d); n.setDate(n.getDate() + 1); return n; }); } };
 
   const aiResultFromData = (data: Record<string, unknown>) => ({
     name: data.name as string,
@@ -404,28 +540,39 @@ export default function CaloriesPage() {
     },
   });
 
-  const loadLogs = async () => {
+  const loadLogs = async (date: Date) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const dayStart = new Date(date); dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(date); dayEnd.setHours(23, 59, 59, 999);
+    const { data } = await supabase.from("meal_logs")
+      .select("id, name, calories, protein_g, carbs_g, fat_g, logged_at, source, nutrition_meta")
+      .eq("user_id", user.id)
+      .gte("logged_at", dayStart.toISOString()).lte("logged_at", dayEnd.toISOString())
+      .order("logged_at", { ascending: false });
+    if (data) setLogs(data);
+  };
+
+  const initLoad = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     setUserEmail(user.email ?? "");
     const { data: profile } = await supabase.from("profiles").select("subscription_tier").eq("id", user.id).single();
     setUserTier((profile?.subscription_tier as "free" | "pro") ?? "free");
-    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
-    const { data } = await supabase.from("meal_logs")
-      .select("id, name, calories, protein_g, carbs_g, fat_g, logged_at, source, nutrition_meta")
-      .eq("user_id", user.id)
-      .gte("logged_at", todayStart.toISOString()).lte("logged_at", todayEnd.toISOString())
-      .order("logged_at", { ascending: false });
-    if (data) setLogs(data);
+    loadLogs(selectedDate);
   };
 
-  useEffect(() => { loadLogs(); }, []);
+  useEffect(() => { initLoad(); }, []);
+  useEffect(() => { loadLogs(selectedDate); }, [selectedDate]);
 
   const totalCals = logs.reduce((s, m) => s + m.calories, 0);
   const totalProtein = logs.reduce((s, m) => s + m.protein_g, 0);
   const totalCarbs = logs.reduce((s, m) => s + m.carbs_g, 0);
   const totalFat = logs.reduce((s, m) => s + m.fat_g, 0);
+
+  const visibleTabs: { id: Tab; label: string }[] = isToday
+    ? [{ id: "log", label: "Today's Log" }, { id: "camera", label: "📷 Photo" }, { id: "describe", label: "✍️ Describe" }, { id: "brand", label: "🏪 Brand" }, { id: "manual", label: "Manual" }]
+    : [{ id: "log", label: "Log" }];
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -494,18 +641,15 @@ export default function CaloriesPage() {
   };
 
   const switchToLog = async () => {
-    // Reload logs then switch — the newest entry (index 0, sorted desc) gets highlighted
+    await loadLogs(selectedDate);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
+    if (!user) { setSaving(false); return; }
+    const dayStart = new Date(selectedDate); dayStart.setHours(0,0,0,0);
+    const dayEnd = new Date(selectedDate); dayEnd.setHours(23,59,59,999);
     const { data } = await supabase.from("meal_logs").select("*").eq("user_id", user.id)
-      .gte("logged_at", todayStart.toISOString()).lte("logged_at", todayEnd.toISOString())
+      .gte("logged_at", dayStart.toISOString()).lte("logged_at", dayEnd.toISOString())
       .order("logged_at", { ascending: false });
-    if (data) {
-      setLogs(data);
-      if (data[0]) setSavedId(data[0].id);
-    }
+    if (data?.[0]) setSavedId(data[0].id);
     setSaving(false);
     setActiveTab("log");
     setTimeout(() => setSavedId(null), 2500);
@@ -560,6 +704,17 @@ export default function CaloriesPage() {
         <p className="text-text-secondary mt-1">Log meals manually or let AI identify your food.</p>
       </div>
 
+      {/* Date navigation */}
+      <div className="flex items-center justify-between gap-4 mb-5">
+        <button onClick={goToPrevDay} className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-text-muted hover:text-text-primary hover:border-border-bright transition-all text-sm">‹</button>
+        <div className="flex-1 text-center">
+          <p className="font-display font-bold text-text-primary text-sm">{formatDate(selectedDate)}</p>
+          {!isToday && <p className="text-text-muted text-xs mt-0.5">{selectedDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>}
+        </div>
+        <button onClick={goToNextDay} disabled={isToday}
+          className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-text-muted hover:text-text-primary hover:border-border-bright transition-all text-sm disabled:opacity-30 disabled:cursor-not-allowed">›</button>
+      </div>
+
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
           { label: "Calories", value: Math.round(totalCals), unit: "kcal", color: "text-lime" },
@@ -576,7 +731,7 @@ export default function CaloriesPage() {
       </div>
 
       <div className="flex bg-surface border border-border rounded-xl p-1 mb-6">
-        {([{ id: "log", label: "Today's Log" }, { id: "camera", label: "📷 Photo" }, { id: "describe", label: "✍️ Describe" }, { id: "brand", label: "🏪 Brand" }, { id: "manual", label: "Manual" }] as const).map((t) => (
+        {visibleTabs.map((t) => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
             className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === t.id ? "bg-lime text-canvas font-semibold" : "text-text-secondary hover:text-text-primary"}`}>
             {t.label}
@@ -589,8 +744,8 @@ export default function CaloriesPage() {
           {logs.length === 0 ? (
             <div className="bg-card border border-border rounded-2xl text-center py-16">
               <p className="text-4xl mb-4">🍽️</p>
-              <p className="text-text-secondary">Nothing logged yet today.</p>
-              <button onClick={() => setActiveTab("camera")} className="mt-3 text-lime text-sm hover:text-lime-glow transition-colors">Take a photo or log manually →</button>
+              <p className="text-text-secondary">{isToday ? "Nothing logged yet today." : `No meals logged on ${formatDate(selectedDate)}.`}</p>
+              {isToday && <button onClick={() => setActiveTab("camera")} className="mt-3 text-lime text-sm hover:text-lime-glow transition-colors">Take a photo or log manually →</button>}
             </div>
           ) : (
             <div className="space-y-4">
@@ -600,6 +755,14 @@ export default function CaloriesPage() {
                     <span className="text-sm">{emoji}</span>
                     <span className="text-text-muted text-xs font-mono uppercase tracking-wider">{label}</span>
                     <div className="flex-1 h-px bg-border" />
+                    {entries.length >= 2 && (
+                      <button
+                        onClick={() => setSelectedGroup({ label, emoji, entries })}
+                        className="px-2 py-0.5 rounded-md bg-surface border border-border text-text-muted text-[10px] hover:text-text-primary hover:border-border-bright transition-all"
+                      >
+                        breakdown ›
+                      </button>
+                    )}
                     <span className="num text-text-muted text-xs font-mono">
                       {entries.reduce((s, e) => s + e.calories, 0)} kcal
                     </span>
@@ -607,7 +770,7 @@ export default function CaloriesPage() {
                   <div className="bg-card border border-border rounded-2xl overflow-hidden">
                     {entries.map((entry, i) => (
                       <div key={entry.id}
-                        onClick={() => setSelectedEntry(entry)}
+                        onClick={() => entries.length >= 2 ? setSelectedGroup({ label, emoji, entries }) : setSelectedEntry(entry)}
                         className={`relative flex items-center gap-4 p-4 group transition-all cursor-pointer hover:bg-surface/50 ${i < entries.length - 1 ? "border-b border-border" : ""} ${savedId === entry.id ? "bg-lime/5" : ""}`}
                         style={savedId === entry.id ? { boxShadow: "inset 0 0 0 1px rgba(182,240,64,0.3)" } : undefined}>
                         <div className="absolute left-0 top-3 bottom-3 w-0.5 rounded-full"
@@ -872,6 +1035,14 @@ export default function CaloriesPage() {
             </div>
           )}
         </div>
+      )}
+
+      {selectedGroup && (
+        <MealGroupModal
+          group={selectedGroup}
+          onClose={() => setSelectedGroup(null)}
+          onSelectEntry={(e) => { setSelectedGroup(null); setSelectedEntry(e); }}
+        />
       )}
 
       {selectedEntry && (
