@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ForageSpinner } from "@/components/ui/ForageSpinner";
+import Link from "next/link";
 
 type Profile = {
   id: string;
@@ -139,7 +140,10 @@ export default function SocialPage() {
   const [groupMsg, setGroupMsg] = useState("");
 
   const [copyMsg, setCopyMsg] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const qrRef = useRef<HTMLImageElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { load(); }, []);
 
@@ -147,6 +151,7 @@ export default function SocialPage() {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push("/"); return; }
+    setUserId(user.id);
 
     const { data: prof } = await supabase
       .from("profiles")
@@ -254,6 +259,27 @@ export default function SocialPage() {
     } catch { setGroupStatus("error"); setGroupMsg("Something went wrong."); }
   };
 
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !userId) return;
+    setAvatarUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${userId}/avatar.${ext}`;
+      const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+      const url = `${publicUrl}?t=${Date.now()}`;
+      await supabase.from("profiles").update({ avatar_url: url }).eq("id", userId);
+      setProfile((p) => p ? { ...p, avatar_url: url } : p);
+    } catch (err) {
+      console.error("Avatar upload failed:", err);
+    } finally {
+      setAvatarUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   const copyCode = async () => {
     if (!profile?.friend_code) return;
     await navigator.clipboard.writeText(profile.friend_code);
@@ -295,7 +321,17 @@ export default function SocialPage() {
       {activeTab === "profile" && (
         <div className="space-y-4">
           <div className="bg-card border border-border rounded-2xl p-6 flex flex-col items-center gap-4">
-            <UserAvatar src={profile?.avatar_url} size={96} className="ring-4 ring-lime/20" />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={avatarUploading}
+              className="relative group rounded-full focus:outline-none"
+              aria-label="Change profile photo">
+              <UserAvatar src={profile?.avatar_url} size={96} className="ring-4 ring-lime/20" />
+              <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-white text-xs font-medium">{avatarUploading ? "…" : "Change"}</span>
+              </div>
+            </button>
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
             <div className="text-center">
               <div className="font-display font-bold text-xl text-text-primary">{profile?.display_name || "You"}</div>
               <div className="flex items-center gap-1.5 mt-1">
