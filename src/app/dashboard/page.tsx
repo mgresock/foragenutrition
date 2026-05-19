@@ -79,13 +79,6 @@ interface MealLog { id: string; name: string; calories: number; protein_g: numbe
 interface Supplement { id: string; name: string; dose: string | null; timing: string; active: boolean; }
 interface Onboarding { goals: string[] | null; meals_per_week: number | null; }
 interface Insight { type: string; title: string; body: string; }
-interface WhoopData {
-  connected: boolean;
-  recovery?: { score: number | null; hrv: number | null; resting_hr: number | null; spo2: number | null } | null;
-  sleep?: { performance: number | null; efficiency: number | null; duration_hours: number | null } | null;
-  strain?: { score: number | null; avg_hr: number | null; kilojoules: number | null } | null;
-}
-
 const CALORIE_GOAL = 2600;
 const PROTEIN_GOAL = 180;
 
@@ -115,7 +108,6 @@ export default function DashboardPage() {
   const [insights, setInsights] = useState<Insight[] | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [showInsights, setShowInsights] = useState(false);
-  const [whoop, setWhoop] = useState<WhoopData | null>(null);
   const [waterMl, setWaterMl] = useState(0);
   const [customWaterInput, setCustomWaterInput] = useState("");
   const [supplements, setSupplements] = useState<Supplement[]>([]);
@@ -180,9 +172,6 @@ export default function DashboardPage() {
         });
         setWeeklyData(days);
       }
-
-      // Whoop (non-blocking)
-      fetch("/api/whoop/data").then((r) => r.json()).then((d) => { if (d.connected) setWhoop(d); }).catch(() => {});
 
       // Water logs for today
       const { data: waterData } = await supabase
@@ -561,53 +550,6 @@ export default function DashboardPage() {
           </Link>
         ))}
       </div>
-
-      {/* Whoop widget */}
-      {whoop?.connected && whoop.recovery && (
-        <div className="bg-card border border-border rounded-2xl p-5 mb-4">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-2 h-2 rounded-full bg-red-400" />
-            <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider">Whoop Recovery</h3>
-            <Link href="/dashboard/settings/whoop" className="ml-auto text-text-muted text-xs hover:text-text-secondary transition-colors">Manage →</Link>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {whoop.recovery.score != null && (
-              <div className={`rounded-xl p-3 border ${whoop.recovery.score >= 67 ? "bg-lime/10 border-lime/20" : whoop.recovery.score >= 34 ? "bg-amber-app/10 border-amber-app/20" : "bg-red-400/10 border-red-400/20"}`}>
-                <p className="text-text-muted text-xs mb-1">Recovery</p>
-                <p className={`num font-display font-black text-3xl leading-none ${whoop.recovery.score >= 67 ? "text-lime" : whoop.recovery.score >= 34 ? "text-amber-app" : "text-red-400"}`}>{whoop.recovery.score}<span className="text-sm font-normal text-text-muted">%</span></p>
-                <div className="mt-2 h-1.5 bg-canvas rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full ${whoop.recovery.score >= 67 ? "bg-lime" : whoop.recovery.score >= 34 ? "bg-amber-app" : "bg-red-400"}`} style={{ width: `${whoop.recovery.score}%` }} />
-                </div>
-              </div>
-            )}
-            {whoop.recovery.hrv != null && (
-              <div className="bg-surface border border-border rounded-xl p-3">
-                <p className="text-text-muted text-xs mb-1">HRV</p>
-                <p className="num font-display font-black text-3xl text-cyan-app leading-none">{whoop.recovery.hrv}<span className="text-sm font-normal text-text-muted">ms</span></p>
-              </div>
-            )}
-            {whoop.recovery.resting_hr != null && (
-              <div className="bg-surface border border-border rounded-xl p-3">
-                <p className="text-text-muted text-xs mb-1">Resting HR</p>
-                <p className="num font-display font-black text-3xl text-text-primary leading-none">{whoop.recovery.resting_hr}<span className="text-sm font-normal text-text-muted">bpm</span></p>
-              </div>
-            )}
-            {whoop.sleep?.performance != null && (
-              <div className="bg-surface border border-border rounded-xl p-3">
-                <p className="text-text-muted text-xs mb-1">Sleep</p>
-                <p className="num font-display font-black text-3xl text-text-primary leading-none">{whoop.sleep.performance}<span className="text-sm font-normal text-text-muted">%</span></p>
-              </div>
-            )}
-          </div>
-          {whoop.strain?.score != null && (
-            <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-surface border border-border rounded-xl">
-              <span className="text-text-muted text-xs">Last strain</span>
-              <span className="num font-display font-bold text-text-primary">{whoop.strain.score}</span>
-              {whoop.strain.avg_hr && <span className="text-text-muted text-xs">· avg {whoop.strain.avg_hr} bpm</span>}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* AI Coach */}
       {showInsights && (

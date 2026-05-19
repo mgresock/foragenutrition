@@ -5,12 +5,10 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 const SETTINGS = [
-  { label: "Plan & Billing", desc: "Upgrade to Pro · manage subscription", href: "/dashboard/settings/billing", badge: "Upgrade" },
   { label: "Profile & Body Stats", desc: "Age, height, weight, biological sex", href: "/dashboard/settings/profile" },
   { label: "Nutrition Goals", desc: "Goals and meals per week", href: "/dashboard/settings/goals" },
   { label: "Grocery Preferences", desc: "Budget and ZIP code", href: "/dashboard/settings/grocery" },
   { label: "Supplements", desc: "Your daily supplement stack", href: "/dashboard/settings/supplements" },
-  { label: "Whoop", desc: "Sync recovery, HRV, and sleep data", href: "/dashboard/settings/whoop", badge: "Connect" },
 ];
 
 export default function SettingsPage() {
