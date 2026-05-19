@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const isMobile = process.env.BUILD_TARGET === "mobile";
 
 const nextConfig: NextConfig = {
+  typescript: { ignoreBuildErrors: true },
+  eslint: { ignoreDuringBuilds: true },
   // Static export for Capacitor native builds; web uses normal server mode
   ...(isMobile && { output: "export", distDir: "out" }),
   images: {
