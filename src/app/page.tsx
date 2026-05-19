@@ -110,14 +110,35 @@ export default function AuthPage() {
       </div>
 
       {/* ─── RIGHT PANEL — auth ─────────────────────────────────────────── */}
-      <div className="flex-1 lg:w-[45%] flex flex-col justify-center items-center px-6 py-12 sm:px-12 relative">
+      <div className="flex-1 lg:w-[45%] flex flex-col justify-start lg:justify-center items-center px-6 pt-10 pb-12 sm:px-12 lg:py-12 relative">
 
         {/* Right panel subtle border on desktop */}
         <div className="hidden lg:block absolute left-0 top-12 bottom-12 w-px bg-gradient-to-b from-transparent via-border to-transparent" />
 
-        {/* Mobile logo */}
-        <div className="lg:hidden mb-10">
-          <ForageLogo size={32} />
+        {/* Mobile hero */}
+        <div className="lg:hidden w-full max-w-sm mb-8">
+          <div className="mb-6">
+            <ForageLogo size={28} />
+          </div>
+          <h1 className="font-display font-black text-text-primary leading-[0.9] mb-3" style={{ fontSize: "clamp(40px, 11vw, 56px)" }}>
+            EAT TO <span className="text-lime">BUILD.</span><br />SPEND LESS.
+          </h1>
+          <p className="text-text-secondary text-sm leading-relaxed mb-5">
+            AI nutrition tracking and grocery savings for gym-goers.
+          </p>
+          <div className="flex gap-6 mb-2">
+            {[
+              { val: "38%", desc: "grocery savings" },
+              { val: "180g+", desc: "daily protein" },
+              { val: "94%", desc: "goal hit rate" },
+            ].map((s) => (
+              <div key={s.desc}>
+                <p className="num font-display font-black text-xl text-lime leading-none">{s.val}</p>
+                <p className="text-text-muted text-[10px] mt-1 uppercase tracking-wider">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+          <div className="h-px w-full bg-border mt-6 mb-6" />
         </div>
 
         <div className="w-full max-w-sm animate-slide-up">

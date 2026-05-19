@@ -177,15 +177,19 @@ export function Sidebar() {
       </aside>
 
       {/* Mobile top bar */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-surface border-b border-border flex items-center justify-between px-4 h-14"
-        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
-        <ForageLogo size={20} />
-        <span className="font-display font-bold text-text-primary text-sm">
-          {currentPage?.label ?? "Forage"}
-        </span>
-        <Link href="/dashboard/social">
-          <UserAvatar src={profile?.avatar_url} size={30} className="ring-2 ring-border" />
-        </Link>
+      <header
+        className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-surface border-b border-border"
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+      >
+        <div className="h-14 flex items-center justify-between px-4">
+          <ForageLogo size={20} />
+          <span className="font-display font-bold text-text-primary text-sm">
+            {currentPage?.label ?? "Forage"}
+          </span>
+          <Link href="/dashboard/social">
+            <UserAvatar src={profile?.avatar_url} size={30} className="ring-2 ring-border" />
+          </Link>
+        </div>
       </header>
 
       {/* Mobile bottom tab bar */}
