@@ -131,7 +131,7 @@ export function Sidebar() {
         </div>
 
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-          {ALL_NAV.map((item) => {
+          {ALL_NAV.filter((item) => item.href !== "/dashboard/social").map((item) => {
             const active = isActive(item.href);
             return (
               <Link key={item.href} href={item.href}
@@ -169,11 +169,15 @@ export function Sidebar() {
             </span>
             <span className="font-medium">Settings</span>
           </Link>
-          <Link href="/dashboard/social" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-card transition-all">
-            <UserAvatar src={profile?.avatar_url} size={32} className="ring-2 ring-border flex-shrink-0" />
+          <Link href="/dashboard/social" className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${
+            isActive("/dashboard/social")
+              ? "bg-lime/10 border border-lime/20"
+              : "hover:bg-card border border-transparent"
+          }`}>
+            <UserAvatar src={profile?.avatar_url} size={32} className={`ring-2 flex-shrink-0 ${isActive("/dashboard/social") ? "ring-lime/40" : "ring-border"}`} />
             <div className="flex-1 min-w-0">
-              <div className="text-text-primary text-sm font-medium truncate">{profile?.display_name || "You"}</div>
-              <div className="text-text-muted text-xs truncate">{email}</div>
+              <div className={`text-sm font-medium truncate ${isActive("/dashboard/social") ? "text-lime" : "text-text-primary"}`}>{profile?.display_name || "You"}</div>
+              <div className="text-text-muted text-xs truncate">Social</div>
             </div>
           </Link>
         </div>
