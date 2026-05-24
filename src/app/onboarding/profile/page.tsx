@@ -8,6 +8,36 @@ import { OnboardingShell } from "@/components/onboarding/OnboardingShell";
 
 type Unit = "imperial" | "metric";
 
+const PRIMARY_GOALS = [
+  {
+    id: "gain",
+    emoji: "💪",
+    label: "Gain Weight",
+    sub: "Build muscle & size",
+    color: "lime" as const,
+  },
+  {
+    id: "lose",
+    emoji: "🔥",
+    label: "Lose Weight",
+    sub: "Burn fat, stay lean",
+    color: "orange" as const,
+  },
+  {
+    id: "maintain",
+    emoji: "⚖️",
+    label: "Maintain",
+    sub: "Stay where I am",
+    color: "cyan" as const,
+  },
+];
+
+const GOAL_STYLES: Record<string, { selected: string; dot: string }> = {
+  lime:   { selected: "border-lime/50 bg-lime/10",           dot: "bg-lime" },
+  orange: { selected: "border-orange-400/50 bg-orange-400/10", dot: "bg-orange-400" },
+  cyan:   { selected: "border-cyan-app/50 bg-cyan-app/10",   dot: "bg-cyan-app" },
+};
+
 export default function ProfilePage() {
   const router = useRouter();
   const supabase = createClient();
@@ -18,6 +48,7 @@ export default function ProfilePage() {
   const [heightCm, setHeightCm] = useState("");
   const [weight, setWeight] = useState("");
   const [sex, setSex] = useState("");
+  const [primaryGoal, setPrimaryGoal] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -37,25 +68,37 @@ export default function ProfilePage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push("/"); return; }
 
-    const { error } = await supabase.from("onboarding").upsert({
-      user_id: user.id,
-      age: parseInt(age),
-      sex,
-      height_cm: toHeightCm(),
-      weight_kg: toWeightKg(),
-      unit_pref: unit,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "user_id" });
+    const [{ error: onboardErr }, { error: profileErr }] = await Promise.all([
+      supabase.from("onboarding").upsert({
+        user_id: user.id,
+        age: parseInt(age),
+        sex,
+        height_cm: toHeightCm(),
+        weight_kg: toWeightKg(),
+        unit_pref: unit,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id" }),
+      supabase.from("profiles").update({
+        goal: primaryGoal,
+        age: parseInt(age),
+        biological_sex: sex,
+        height_cm: toHeightCm(),
+        weight_kg: toWeightKg(),
+      }).eq("id", user.id),
+    ]);
 
-    if (error) { setError(error.message); setLoading(false); return; }
+    const err = onboardErr || profileErr;
+    if (err) { setError(err.message); setLoading(false); return; }
     router.push("/onboarding/location");
   };
 
-  const isValid = age && (unit === "imperial" ? heightFt : heightCm) && weight && sex;
+  const isValid = age && (unit === "imperial" ? heightFt : heightCm) && weight && sex && primaryGoal;
 
   return (
-    <OnboardingShell step={1} totalSteps={4} title="Tell us about yourself." subtitle="We use this to calculate your personal nutrition targets and caloric needs.">
-      <div className="space-y-5">
+    <OnboardingShell step={1} totalSteps={4} title="Tell us about yourself." subtitle="We use this to calculate your personal calorie targets, macros, and nutrition plan.">
+      <div className="space-y-6">
+
+        {/* Unit toggle */}
         <div className="flex bg-surface border border-border rounded-xl p-1 w-fit">
           {(["imperial", "metric"] as Unit[]).map((u) => (
             <button key={u} onClick={() => setUnit(u)}
@@ -65,10 +108,12 @@ export default function ProfilePage() {
           ))}
         </div>
 
+        {/* Age */}
         <Field label="Age" hint="years">
           <NumberInput value={age} onChange={setAge} placeholder="25" min={10} max={100} />
         </Field>
 
+        {/* Sex */}
         <Field label="Biological Sex" hint="used for BMR calculation">
           <div className="flex gap-3 flex-wrap">
             {["Male", "Female", "Prefer not to say"].map((s) => (
@@ -80,6 +125,7 @@ export default function ProfilePage() {
           </div>
         </Field>
 
+        {/* Height */}
         <Field label="Height">
           {unit === "imperial" ? (
             <div className="flex gap-3">
@@ -91,9 +137,44 @@ export default function ProfilePage() {
           )}
         </Field>
 
+        {/* Weight */}
         <Field label="Weight">
           <NumberInput value={weight} onChange={setWeight} placeholder={unit === "imperial" ? "170" : "77"} min={50} max={600} suffix={unit === "imperial" ? "lbs" : "kg"} />
         </Field>
+
+        {/* Primary goal — big tappable cards */}
+        <div>
+          <div className="flex items-baseline gap-2 mb-3">
+            <label className="text-xs text-text-secondary uppercase tracking-wider">Primary Goal</label>
+            <span className="text-text-muted text-xs">— we&apos;ll set your calories accordingly</span>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {PRIMARY_GOALS.map((g) => {
+              const selected = primaryGoal === g.id;
+              const styles = GOAL_STYLES[g.color];
+              return (
+                <button
+                  key={g.id}
+                  onClick={() => setPrimaryGoal(g.id)}
+                  className={`relative flex flex-col items-center gap-2 px-3 py-5 rounded-2xl border-2 transition-all duration-200 ${
+                    selected ? styles.selected : "bg-surface border-border hover:border-border-bright"
+                  }`}
+                >
+                  {selected && (
+                    <span className={`absolute top-2.5 right-2.5 w-2 h-2 rounded-full ${styles.dot}`} />
+                  )}
+                  <span className="text-3xl leading-none">{g.emoji}</span>
+                  <div className="text-center">
+                    <p className={`font-display font-bold text-sm leading-tight ${selected ? (g.color === "lime" ? "text-lime" : g.color === "orange" ? "text-orange-400" : "text-cyan-app") : "text-text-primary"}`}>
+                      {g.label}
+                    </p>
+                    <p className="text-text-muted text-[10px] mt-0.5 leading-tight">{g.sub}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {error && <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-lg px-4 py-2">{error}</p>}
 
