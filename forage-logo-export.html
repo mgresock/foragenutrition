@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Forage Logo Download</title>
+<style>
+  body {
+    background: #1a1a1a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 32px;
+    font-family: system-ui, sans-serif;
+    padding: 40px;
+  }
+  h2 { color: #b6f040; font-size: 13px; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 8px; }
+  .card { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  canvas { border-radius: 12px; display: block; }
+  button {
+    background: #b6f040;
+    color: #0c0e09;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+  button:hover { background: #d4ff6a; }
+  .row { display: flex; gap: 48px; flex-wrap: wrap; justify-content: center; }
+</style>
+</head>
+<body>
+
+<div class="row">
+  <!-- ICON -->
+  <div class="card">
+    <h2>Icon (512×512) — upload to "Icon"</h2>
+    <canvas id="icon" width="512" height="512"></canvas>
+    <button onclick="download('icon','forage-icon.png')">Download Icon PNG</button>
+  </div>
+
+  <!-- LOGO -->
+  <div class="card">
+    <h2>Logo (1200×400) — upload to "Logo"</h2>
+    <canvas id="logo" width="1200" height="400" style="width:600px;height:200px"></canvas>
+    <button onclick="download('logo','forage-logo.png')">Download Logo PNG</button>
+  </div>
+</div>
+
+<script>
+function drawIcon(canvas) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const cx = w / 2, cy = h / 2;
+  const scale = w / 32;
+
+  ctx.fillStyle = '#0c0e09';
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.save();
+  ctx.scale(scale, scale);
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(16, 16, 15, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(182,240,64,0.3)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Left leaf
+  ctx.beginPath();
+  ctx.moveTo(16, 26);
+  ctx.bezierCurveTo(16, 26, 7, 21, 7, 13);
+  ctx.bezierCurveTo(7, 8.5, 10, 6, 16, 9);
+  ctx.strokeStyle = '#b6f040';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Right leaf
+  ctx.beginPath();
+  ctx.moveTo(16, 20);
+  ctx.bezierCurveTo(16, 20, 22, 16.5, 22, 11);
+  ctx.bezierCurveTo(22, 8, 20, 6.5, 16, 9);
+  ctx.strokeStyle = 'rgba(182,240,64,0.7)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Stem
+  ctx.beginPath();
+  ctx.moveTo(16, 9);
+  ctx.lineTo(16, 26);
+  ctx.strokeStyle = '#b6f040';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Root dot
+  ctx.beginPath();
+  ctx.arc(16, 26, 1.5, 0, Math.PI * 2);
+  ctx.fillStyle = '#b6f040';
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawLogo(canvas) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+
+  ctx.fillStyle = '#0c0e09';
+  ctx.fillRect(0, 0, w, h);
+
+  const iconSize = 200;
+  const scale = iconSize / 32;
+  const startX = (w - iconSize - 20 - 420) / 2;
+  const startY = (h - iconSize) / 2;
+
+  ctx.save();
+  ctx.translate(startX, startY);
+  ctx.scale(scale, scale);
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(16, 16, 15, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(182,240,64,0.3)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Left leaf
+  ctx.beginPath();
+  ctx.moveTo(16, 26);
+  ctx.bezierCurveTo(16, 26, 7, 21, 7, 13);
+  ctx.bezierCurveTo(7, 8.5, 10, 6, 16, 9);
+  ctx.strokeStyle = '#b6f040';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Right leaf
+  ctx.beginPath();
+  ctx.moveTo(16, 20);
+  ctx.bezierCurveTo(16, 20, 22, 16.5, 22, 11);
+  ctx.bezierCurveTo(22, 8, 20, 6.5, 16, 9);
+  ctx.strokeStyle = 'rgba(182,240,64,0.7)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Stem
+  ctx.beginPath();
+  ctx.moveTo(16, 9);
+  ctx.lineTo(16, 26);
+  ctx.strokeStyle = '#b6f040';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Root dot
+  ctx.beginPath();
+  ctx.arc(16, 26, 1.5, 0, Math.PI * 2);
+  ctx.fillStyle = '#b6f040';
+  ctx.fill();
+
+  ctx.restore();
+
+  // Wordmark
+  ctx.font = '900 110px Arial Black, Arial, sans-serif';
+  ctx.fillStyle = '#f0ece0';
+  ctx.letterSpacing = '12px';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('FORAGE', startX + iconSize + 36, h / 2);
+}
+
+window.onload = () => {
+  drawIcon(document.getElementById('icon'));
+  drawLogo(document.getElementById('logo'));
+};
+
+function download(id, filename) {
+  const canvas = document.getElementById(id);
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = filename;
+  a.click();
+}
+</script>
+</body>
+</html>

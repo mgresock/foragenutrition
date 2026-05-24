@@ -125,7 +125,7 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex fixed left-0 top-0 h-full w-60 bg-surface border-r border-border flex-col z-40">
+      <aside className="hidden lg:flex fixed left-0 top-0 h-full w-60 bg-surface border-r border-border flex-col z-40 select-none">
         <div className="px-5 py-5 border-b border-border">
           <ForageLogo size={24} />
         </div>
@@ -179,14 +179,14 @@ export function Sidebar() {
         </div>
       </aside>
 
-      {/* Mobile top bar */}
+      {/* Mobile top bar — frosted glass */}
       <header
-        className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-surface border-b border-border"
+        className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-canvas/85 backdrop-blur-xl border-b border-border"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
-        <div className="h-14 flex items-center justify-between px-4">
+        <div className="h-14 flex items-center justify-between px-5">
           <ForageLogo size={20} />
-          <span className="font-display font-bold text-text-primary text-sm">
+          <span className="font-semibold text-text-primary tracking-tight" style={{ fontSize: 15 }}>
             {currentPage?.label ?? "Forage"}
           </span>
           <Link href="/dashboard/social">
@@ -195,33 +195,36 @@ export function Sidebar() {
         </div>
       </header>
 
-      {/* Mobile bottom tab bar */}
+      {/* Mobile bottom tab bar — frosted glass with pill active state */}
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-border z-40 flex items-stretch"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-canvas/85 backdrop-blur-xl border-t border-border"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
-        {NAV.map((item) => {
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-colors ${
-                active ? "text-lime" : "text-text-muted"
-              }`}
-            >
-              <span className={`relative transition-transform ${active ? "scale-110" : ""}`}>
-                {item.icon}
-                {active && (
-                  <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-lime" />
-                )}
-              </span>
-              <span className={`text-[10px] font-medium leading-none transition-colors ${active ? "text-lime" : "text-text-muted"}`}>
-                {item.shortLabel}
-              </span>
-            </Link>
-          );
-        })}
+        <div className="flex items-stretch h-16">
+          {NAV.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex-1 flex items-center justify-center"
+              >
+                <div className={`flex flex-col items-center gap-[5px] px-4 py-2 rounded-2xl transition-all duration-200 ${
+                  active ? "bg-lime/10" : ""
+                }`}>
+                  <span className={`transition-colors duration-200 ${active ? "text-lime" : "text-text-muted"}`}>
+                    {item.icon}
+                  </span>
+                  <span className={`text-[10px] font-semibold leading-none transition-colors duration-200 ${
+                    active ? "text-lime" : "text-text-muted"
+                  }`}>
+                    {item.shortLabel}
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
       </nav>
     </>
   );

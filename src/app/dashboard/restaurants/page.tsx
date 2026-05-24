@@ -29,7 +29,7 @@ interface RestaurantResult {
   menu_note?: string;
 }
 
-const MACRO_COLORS = { protein: "#b6f040", carbs: "#f0a030", fat: "#40c8f0" };
+const MACRO_COLORS = { protein: "#34C759", carbs: "#FF9F0A", fat: "#32ADE6" };
 
 const POPULAR = [
   "Chipotle", "McDonald's", "Subway", "Chick-fil-A", "Panera Bread",
