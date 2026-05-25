@@ -54,6 +54,15 @@ export default function GoalsPage() {
     }, { onConflict: "user_id" });
 
     if (error) { setError(error.message); setLoading(false); return; }
+
+    // Send welcome email (fire-and-forget — don't block navigation on failure)
+    const { data: profile } = await supabase.from("profiles").select("display_name").eq("id", user.id).single();
+    fetch("/api/send-welcome", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: profile?.display_name || "" }),
+    }).catch(() => {}); // swallow errors silently
+
     router.push("/dashboard");
   };
 

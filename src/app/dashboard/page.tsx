@@ -65,7 +65,7 @@ function DailyFact() {
     setFact(FUN_FACTS[Math.floor(Math.random() * FUN_FACTS.length)]);
   }, []);
   return (
-    <div className="flex items-center gap-2.5 px-4 py-2.5 bg-surface border border-border rounded-xl mb-4 overflow-hidden">
+    <div className="flex items-center gap-2.5 px-4 py-2.5 bg-surface border border-border rounded-xl overflow-hidden">
       <span className="text-base flex-shrink-0">{fact.emoji}</span>
       <p className="text-text-muted text-[11px] leading-relaxed truncate sm:whitespace-normal sm:overflow-visible">
         <span className="text-lime font-medium">Did you know?</span>{" "}{fact.fact}
@@ -271,9 +271,9 @@ export default function DashboardPage() {
   };
 
   const MACROS = [
-    { label: "Protein", current: Math.round(totalProtein), goal: 180, color: "#b6f040", unit: "g" },
-    { label: "Carbs", current: Math.round(totalCarbs), goal: 280, color: "#f0a030", unit: "g" },
-    { label: "Fat", current: Math.round(totalFat), goal: 70, color: "#40c8f0", unit: "g" },
+    { label: "Protein", current: Math.round(totalProtein), goal: 180, color: "#34C759", unit: "g" },
+    { label: "Carbs", current: Math.round(totalCarbs), goal: 280, color: "#FF9F0A", unit: "g" },
+    { label: "Fat", current: Math.round(totalFat), goal: 70, color: "#32ADE6", unit: "g" },
   ];
 
   const QUICK_ACTIONS = [
@@ -286,396 +286,527 @@ export default function DashboardPage() {
   const weeklyMax = Math.max(...weeklyData.map((d) => d.cals), CALORIE_GOAL);
   const todayIso = new Date().toISOString().split("T")[0];
 
-  return (
-    <div className="px-6 py-8 pb-24 lg:pb-8 max-w-5xl">
-
-      {/* Header */}
-      <div className="mb-8 flex items-start justify-between gap-4">
+  /* ── upgrade nudge shared between mobile top and desktop right column ── */
+  const UpgradeNudge = tier === "free" ? (
+    <Link href="/dashboard/settings/billing"
+      className="flex items-center justify-between gap-3 px-4 py-3 bg-lime/5 border border-lime/20 rounded-xl hover:bg-lime/10 hover:border-lime/30 transition-all group">
+      <div className="flex items-center gap-3">
+        <span className="text-lg">⚡</span>
         <div>
-          <p className="text-text-muted text-sm font-mono uppercase tracking-wider">{today}</p>
+          <p className="text-text-primary text-sm font-medium">
+            {aiRemaining === 0
+              ? "AI limit reached — upgrade to continue"
+              : `${aiRemaining} AI request${aiRemaining === 1 ? "" : "s"} left this month`}
+          </p>
+          <p className="text-text-muted text-xs">Forage Pro · unlimited AI · $7.99/mo</p>
+        </div>
+      </div>
+      <span className="text-lime text-sm font-display font-bold group-hover:text-lime-glow transition-colors flex-shrink-0">
+        Upgrade →
+      </span>
+    </Link>
+  ) : null;
+
+  return (
+    <div className="px-5 py-6 pb-24 lg:pb-6">
+
+      {/* ── Header — full width ── */}
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-text-muted text-xs font-mono uppercase tracking-widest">{today}</p>
           <h1 className="font-display font-black text-3xl sm:text-4xl text-text-primary mt-1">{greeting}, {firstName}.</h1>
-          <p className="text-text-secondary mt-1">
+          <p className="text-text-secondary text-sm mt-1">
             {remaining > 0 ? `${remaining.toLocaleString()} kcal left to hit your target.` : "Calorie goal crushed. Recovery mode."}
           </p>
         </div>
         <div className="flex flex-col items-end gap-2 flex-shrink-0">
           {streak > 0 && (
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-400/10 border border-orange-400/30 rounded-full">
-              <span className="text-base">🔥</span>
+              <span className="text-sm">🔥</span>
               <span className="num font-display font-black text-orange-400 text-sm">{streak}</span>
               <span className="text-orange-400/70 text-xs">day streak</span>
             </div>
           )}
-          <Link href="/dashboard/social" className="flex items-center gap-2">
+          <Link href="/dashboard/social">
             <UserAvatar src={profile?.avatar_url} size={40} className="ring-2 ring-lime/30" />
           </Link>
         </div>
       </div>
 
-      {/* Fun fact — slim banner */}
-      <DailyFact />
+      {/* ── Mobile-only: DailyFact + upgrade ── */}
+      <div className="lg:hidden space-y-3 mb-4">
+        <DailyFact />
+        {UpgradeNudge}
+      </div>
 
-      {/* Free plan upgrade nudge */}
-      {tier === "free" && (
-        <Link href="/dashboard/settings/billing"
-          className="flex items-center justify-between gap-3 px-4 py-3 mb-4 bg-lime/5 border border-lime/20 rounded-xl hover:bg-lime/10 hover:border-lime/30 transition-all group">
-          <div className="flex items-center gap-3">
-            <span className="text-lg">⚡</span>
-            <div>
-              <p className="text-text-primary text-sm font-medium">
-                {aiRemaining === 0
-                  ? "AI limit reached — upgrade to continue"
-                  : `${aiRemaining} AI request${aiRemaining === 1 ? "" : "s"} left this month`}
-              </p>
-              <p className="text-text-muted text-xs">Forage Pro · unlimited AI · $6.99/mo</p>
+      {/* ── Two-column layout ── */}
+      <div className="lg:flex lg:gap-5 lg:items-start">
+
+        {/* ════ LEFT COLUMN ════ */}
+        <div className="flex-1 min-w-0 flex flex-col gap-4">
+
+          {/* Calorie ring + macros */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Ring */}
+            <div className="lg:col-span-1 bg-card border border-border rounded-2xl p-6 flex flex-col items-center justify-center relative overflow-hidden">
+              <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 50% 60%, rgba(52,199,89,0.05) 0%, transparent 70%)" }} />
+              <div className="relative w-40 h-40 mb-4">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 140 140">
+                  <circle cx="70" cy="70" r="60" fill="none" stroke="#1a2010" strokeWidth="10" />
+                  <circle cx="70" cy="70" r="60" fill="none" stroke="#34C759" strokeWidth="10" strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 60}`}
+                    strokeDashoffset={`${2 * Math.PI * 60 * (1 - progress / 100)}`}
+                    style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1)", filter: "drop-shadow(0 0 10px rgba(52,199,89,0.5))" }} />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="num font-display font-black text-3xl text-text-primary leading-none">{totalCals.toLocaleString()}</span>
+                  <span className="text-text-muted text-xs mt-1">kcal eaten</span>
+                </div>
+              </div>
+              <div className="text-center">
+                <p className={`num text-2xl font-display font-bold leading-none ${remaining > 0 ? "text-lime" : "text-orange-400"}`}>
+                  {Math.abs(remaining).toLocaleString()}
+                </p>
+                <p className="text-text-secondary text-sm mt-0.5">{remaining > 0 ? "kcal remaining" : "kcal over goal"}</p>
+                <p className="text-text-muted text-xs mt-1">Goal: {CALORIE_GOAL.toLocaleString()} kcal</p>
+              </div>
+            </div>
+
+            {/* Macros + protein */}
+            <div className="lg:col-span-2 space-y-4">
+              <div className="bg-card border border-border rounded-2xl p-6">
+                <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider mb-5">Today's Macros</h3>
+                <div className="space-y-4">
+                  {MACROS.map((m) => (
+                    <div key={m.label}>
+                      <div className="flex justify-between items-baseline mb-1.5">
+                        <span className="text-text-secondary text-sm">{m.label}</span>
+                        <span className="num text-text-primary text-sm font-mono">
+                          <span style={{ color: m.color }}>{m.current}</span>
+                          <span className="text-text-muted">/{m.goal}{m.unit}</span>
+                        </span>
+                      </div>
+                      <div className="macro-bar">
+                        <div className="macro-bar-fill" style={{ width: `${Math.min((m.current / m.goal) * 100, 100)}%`, background: m.color, boxShadow: `0 0 8px ${m.color}40` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-card border border-border rounded-2xl p-5 flex items-center gap-5">
+                <div className="relative w-14 h-14 flex-shrink-0">
+                  <svg className="w-full h-full -rotate-90" viewBox="0 0 56 56">
+                    <circle cx="28" cy="28" r="24" fill="none" stroke="#1a2010" strokeWidth="5" />
+                    <circle cx="28" cy="28" r="24" fill="none" stroke="#34C759" strokeWidth="5" strokeLinecap="round"
+                      strokeDasharray={`${2 * Math.PI * 24}`}
+                      strokeDashoffset={`${2 * Math.PI * 24 * (1 - proteinProgress / 100)}`}
+                      style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1)" }} />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-lg">💪</span>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <p className="text-text-muted text-xs uppercase tracking-wider mb-0.5">Protein Goal</p>
+                  <p className="num font-display font-black text-2xl text-lime leading-none">{Math.round(totalProtein)}g <span className="text-text-muted text-sm font-normal">/ {PROTEIN_GOAL}g</span></p>
+                  <p className="text-text-secondary text-xs mt-1">
+                    {totalProtein >= PROTEIN_GOAL ? "✓ Protein goal hit!" : `${PROTEIN_GOAL - Math.round(totalProtein)}g left to hit your muscle-building target`}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
-          <span className="text-lime text-sm font-display font-bold group-hover:text-lime-glow transition-colors flex-shrink-0">
-            Upgrade →
-          </span>
-        </Link>
-      )}
 
-      {/* Calorie ring + macros */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-        <div className="lg:col-span-1 bg-card border border-border rounded-2xl p-6 flex flex-col items-center justify-center relative overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 50% 60%, rgba(182,240,64,0.04) 0%, transparent 70%)" }} />
-          <div className="relative w-40 h-40 mb-4">
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 140 140">
-              <circle cx="70" cy="70" r="60" fill="none" stroke="#1a2010" strokeWidth="10" />
-              <circle cx="70" cy="70" r="60" fill="none" stroke="#b6f040" strokeWidth="10" strokeLinecap="round"
-                strokeDasharray={`${2 * Math.PI * 60}`}
-                strokeDashoffset={`${2 * Math.PI * 60 * (1 - progress / 100)}`}
-                style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1)", filter: "drop-shadow(0 0 10px rgba(182,240,64,0.5))" }} />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="num font-display font-black text-3xl text-text-primary leading-none">{totalCals.toLocaleString()}</span>
-              <span className="text-text-muted text-xs mt-1">kcal eaten</span>
+          {/* 7-Day calorie bars */}
+          {weeklyData.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider">7-Day Calories</h3>
+                <div className="flex items-center gap-3 text-xs text-text-muted">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-lime inline-block" />Today</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-border inline-block" />Goal</span>
+                </div>
+              </div>
+              <div className="flex items-end gap-2 h-24">
+                {weeklyData.map((day) => {
+                  const isToday = day.date === todayIso;
+                  const pct = day.cals > 0 ? Math.min((day.cals / weeklyMax) * 100, 100) : 0;
+                  const goalPct = Math.min((CALORIE_GOAL / weeklyMax) * 100, 100);
+                  return (
+                    <div key={day.date} className="flex-1 flex flex-col items-center gap-1 group relative">
+                      <div className="w-full flex flex-col justify-end" style={{ height: "80px" }}>
+                        <div className="absolute w-full border-t border-dashed border-border/60" style={{ bottom: `${goalPct}%` }} />
+                        <div
+                          className={`w-full rounded-t-md transition-all duration-700 ${isToday ? "bg-lime" : day.cals > 0 ? "bg-lime/30" : "bg-surface"}`}
+                          style={{ height: `${Math.max(pct, day.cals > 0 ? 4 : 0)}%`, boxShadow: isToday ? "0 0 12px rgba(52,199,89,0.3)" : "none" }}
+                        />
+                      </div>
+                      <span className={`text-xs font-mono ${isToday ? "text-lime" : "text-text-muted"}`}>{day.label}</span>
+                      {day.cals > 0 && (
+                        <span className="absolute -top-7 left-1/2 -translate-x-1/2 bg-card border border-border rounded px-1.5 py-0.5 text-xs text-text-primary font-mono opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                          {day.cals.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
+          )}
+
+          {/* Micronutrients */}
+          {(totalFiber > 0 || totalSodium > 0 || totalSugar > 0) && (
+            <div className="bg-card border border-border rounded-2xl px-5 py-4">
+              <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider mb-3">Today's Micronutrients</h3>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: "Fiber", value: Math.round(totalFiber), unit: "g", goal: 30, color: "#34C759" },
+                  { label: "Sugar", value: Math.round(totalSugar), unit: "g", goal: 50, color: "#FF9F0A" },
+                  { label: "Sodium", value: Math.round(totalSodium), unit: "mg", goal: 2300, color: totalSodium > 2300 ? "#ef4444" : "#32ADE6" },
+                ].map((m) => (
+                  <div key={m.label} className="text-center">
+                    <p className="text-text-muted text-[10px] uppercase tracking-wider mb-1">{m.label}</p>
+                    <p className="num font-display font-bold text-lg leading-none" style={{ color: m.color }}>{m.value}<span className="text-text-muted text-xs font-normal ml-0.5">{m.unit}</span></p>
+                    <div className="mt-1.5 h-1 bg-canvas rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${Math.min((m.value / m.goal) * 100, 100)}%`, background: m.color }} />
+                    </div>
+                    <p className="text-text-muted text-[10px] mt-0.5">/ {m.goal}{m.unit}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Vitamins & Minerals */}
+          {hasVitaminData && (
+            <div className="bg-card border border-border rounded-2xl px-5 py-4">
+              <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider mb-4">Vitamins & Minerals</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: "Vitamin C", food: Math.round(totalVitC), supp: Math.round(supplementVitaminBoost.vitamin_c_mg), unit: "mg", dv: 90, color: "#FF9F0A" },
+                  { label: "Vitamin D", food: +totalVitD.toFixed(1), supp: +supplementVitaminBoost.vitamin_d_mcg.toFixed(1), unit: "mcg", dv: 20, color: "#34C759" },
+                  { label: "Vitamin B12", food: +totalB12.toFixed(1), supp: +supplementVitaminBoost.vitamin_b12_mcg.toFixed(1), unit: "mcg", dv: 2.4, color: "#32ADE6" },
+                  { label: "Calcium", food: Math.round(totalCalcium), supp: Math.round(supplementVitaminBoost.calcium_mg), unit: "mg", dv: 1000, color: "#34C759" },
+                  { label: "Iron", food: +totalIron.toFixed(1), supp: +supplementVitaminBoost.iron_mg.toFixed(1), unit: "mg", dv: 18, color: "#FF9F0A" },
+                  { label: "Potassium", food: Math.round(totalPotassium), supp: Math.round(supplementVitaminBoost.potassium_mg), unit: "mg", dv: 4700, color: "#32ADE6" },
+                  { label: "Magnesium", food: Math.round(totalMagnesium), supp: Math.round(supplementVitaminBoost.magnesium_mg), unit: "mg", dv: 420, color: "#34C759" },
+                ].map((v) => {
+                  const total = v.food + v.supp;
+                  const foodPct = Math.min(100, (v.food / v.dv) * 100);
+                  const suppPct = Math.min(100 - foodPct, (v.supp / v.dv) * 100);
+                  const totalPct = Math.min(100, (total / v.dv) * 100);
+                  return (
+                    <div key={v.label} className="bg-surface border border-border rounded-xl p-3">
+                      <p className="text-text-muted text-[10px] uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                        {v.label}
+                        {v.supp > 0 && <span className="text-lime/50" title="Includes supplement contribution">💊</span>}
+                      </p>
+                      <p className="num font-display font-bold text-base leading-none" style={{ color: v.color }}>
+                        {total}<span className="text-text-muted text-[10px] font-normal ml-0.5">{v.unit}</span>
+                      </p>
+                      <div className="mt-2 h-1 bg-canvas rounded-full overflow-hidden flex">
+                        <div className="h-full transition-all" style={{ width: `${foodPct}%`, background: v.color }} />
+                        {suppPct > 0 && <div className="h-full transition-all" style={{ width: `${suppPct}%`, background: `${v.color}55` }} />}
+                      </div>
+                      <p className="text-text-muted text-[10px] mt-1">
+                        {Math.round(totalPct)}% DV
+                        {v.supp > 0 && <span className="text-text-muted/50 ml-1">(+{v.supp} supp)</span>}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-text-muted text-[10px] mt-3">Food (solid) + supplements (faded). AI estimates from logged meals.</p>
+            </div>
+          )}
+
+          {/* Today's log — flex-1 so it fills remaining left-column height */}
+          <div className="bg-card border border-border rounded-2xl p-6 flex-1">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider">Today's Log</h3>
+              <Link href="/dashboard/calories" className="text-lime text-xs hover:text-lime-glow transition-colors font-mono">+ Add meal</Link>
+            </div>
+            {logs.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-text-muted text-sm">Nothing logged yet today.</p>
+                <Link href="/dashboard/calories" className="text-lime text-sm mt-2 inline-block hover:text-lime-glow">Log your first meal →</Link>
+              </div>
+            ) : (
+              <div className="space-y-0">
+                {logs.map((meal, i) => (
+                  <div key={meal.id} className={`flex items-center gap-4 py-3 ${i < logs.length - 1 ? "border-b border-border" : ""}`}>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-text-primary text-sm font-medium truncate">{meal.name}</p>
+                      <p className="text-text-muted text-xs mt-0.5">
+                        {new Date(meal.logged_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                        {" · "}<span className="text-lime/70">{meal.protein_g}g P</span> · {meal.carbs_g}g C · {meal.fat_g}g F
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <span className="num text-text-primary text-sm font-mono">{meal.calories}</span>
+                      <span className="text-text-muted text-xs ml-1">kcal</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <div className="text-center">
-            <p className={`num text-2xl font-display font-bold leading-none ${remaining > 0 ? "text-lime" : "text-orange-400"}`}>
-              {Math.abs(remaining).toLocaleString()}
+        </div>
+        {/* ════ END LEFT COLUMN ════ */}
+
+        {/* ════ RIGHT COLUMN ════ */}
+        <div className="hidden lg:flex lg:flex-col lg:w-[320px] flex-shrink-0 gap-4 mt-0">
+
+          {/* Desktop: DailyFact + upgrade */}
+          <DailyFact />
+          {UpgradeNudge}
+
+          {/* Water tracking */}
+          <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-base">💧</span>
+                <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider">Hydration</h3>
+              </div>
+              <span className="num font-mono text-cyan-app text-sm">{waterGlasses}<span className="text-text-muted text-xs">/{waterGoalGlasses} glasses</span></span>
+            </div>
+            <div className="h-2 bg-canvas rounded-full overflow-hidden mb-3">
+              <div className="h-full bg-cyan-app rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(100, (waterMl / adjustedWaterGoal) * 100)}%`, boxShadow: "0 0 8px rgba(50,173,230,0.4)" }} />
+            </div>
+            <p className="text-text-muted text-xs mb-1">
+              {waterMl >= adjustedWaterGoal ? "✓ Daily goal reached!" : `${adjustedWaterGoal - waterMl}ml left · ${(waterMl / 1000).toFixed(1)}L logged`}
             </p>
-            <p className="text-text-secondary text-sm mt-0.5">{remaining > 0 ? "kcal remaining" : "kcal over goal"}</p>
-            <p className="text-text-muted text-xs mt-1">Goal: {CALORIE_GOAL.toLocaleString()} kcal</p>
-          </div>
-        </div>
-
-        <div className="lg:col-span-2 space-y-4">
-          <div className="bg-card border border-border rounded-2xl p-6">
-            <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider mb-5">Today's Macros</h3>
-            <div className="space-y-4">
-              {MACROS.map((m) => (
-                <div key={m.label}>
-                  <div className="flex justify-between items-baseline mb-1.5">
-                    <span className="text-text-secondary text-sm">{m.label}</span>
-                    <span className="num text-text-primary text-sm font-mono">
-                      <span style={{ color: m.color }}>{m.current}</span>
-                      <span className="text-text-muted">/{m.goal}{m.unit}</span>
-                    </span>
-                  </div>
-                  <div className="macro-bar">
-                    <div className="macro-bar-fill" style={{ width: `${Math.min((m.current / m.goal) * 100, 100)}%`, background: m.color, boxShadow: `0 0 8px ${m.color}40` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Protein focus card */}
-          <div className="bg-card border border-border rounded-2xl p-5 flex items-center gap-5">
-            <div className="relative w-14 h-14 flex-shrink-0">
-              <svg className="w-full h-full -rotate-90" viewBox="0 0 56 56">
-                <circle cx="28" cy="28" r="24" fill="none" stroke="#1a2010" strokeWidth="5" />
-                <circle cx="28" cy="28" r="24" fill="none" stroke="#b6f040" strokeWidth="5" strokeLinecap="round"
-                  strokeDasharray={`${2 * Math.PI * 24}`}
-                  strokeDashoffset={`${2 * Math.PI * 24 * (1 - proteinProgress / 100)}`}
-                  style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1)" }} />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-lg">💪</span>
-              </div>
-            </div>
-            <div className="flex-1">
-              <p className="text-text-muted text-xs uppercase tracking-wider mb-0.5">Protein</p>
-              <p className="num font-display font-black text-2xl text-lime leading-none">{Math.round(totalProtein)}g <span className="text-text-muted text-sm font-normal">/ {PROTEIN_GOAL}g</span></p>
-              <p className="text-text-secondary text-xs mt-1">
-                {totalProtein >= PROTEIN_GOAL ? "✓ Protein goal hit!" : `${PROTEIN_GOAL - Math.round(totalProtein)}g left to hit your muscle-building target`}
+            {supplementWaterBonus > 0 && (
+              <p className="text-cyan-app/50 text-[10px] mb-3">
+                💊 +{supplementWaterBonus}ml for your supplement stack
               </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Water tracking */}
-      <div className="bg-card border border-border rounded-2xl p-5 mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">💧</span>
-            <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider">Hydration</h3>
-          </div>
-          <span className="num font-mono text-cyan-app text-sm">{waterGlasses}<span className="text-text-muted text-xs">/{waterGoalGlasses} glasses</span></span>
-        </div>
-        <div className="h-2 bg-canvas rounded-full overflow-hidden mb-3">
-          <div className="h-full bg-cyan-app rounded-full transition-all duration-500"
-            style={{ width: `${Math.min(100, (waterMl / adjustedWaterGoal) * 100)}%`, boxShadow: "0 0 8px rgba(64,200,240,0.4)" }} />
-        </div>
-        <p className="text-text-muted text-xs mb-1">
-          {waterMl >= adjustedWaterGoal ? "✓ Daily goal reached! Stay consistent." : `${adjustedWaterGoal - waterMl}ml left · ${(waterMl / 1000).toFixed(1)}L logged`}
-        </p>
-        {supplementWaterBonus > 0 && (
-          <p className="text-cyan-app/50 text-[10px] mb-3">
-            💊 Goal increased to {(adjustedWaterGoal / 1000).toFixed(1)}L (+{supplementWaterBonus}ml for your supplement stack)
-          </p>
-        )}
-        {supplementWaterBonus === 0 && <div className="mb-3" />}
-        <div className="flex gap-2 flex-wrap">
-          {[{ label: "+ Glass", ml: 250 }, { label: "+ Bottle", ml: 500 }, { label: "+ Large", ml: 750 }].map(({ label, ml }) => (
-            <button key={ml} onClick={() => logWater(ml)}
-              className="flex-1 min-w-0 py-2 bg-cyan-app/10 border border-cyan-app/20 rounded-xl text-cyan-app text-xs font-medium hover:bg-cyan-app/20 transition-all">
-              {label} <span className="text-cyan-app/60">{ml}ml</span>
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-2 mt-2">
-          <input
-            type="number"
-            min="1"
-            placeholder="Custom amount (ml)"
-            value={customWaterInput}
-            onChange={(e) => setCustomWaterInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                const ml = parseInt(customWaterInput);
-                if (ml > 0) { logWater(ml); setCustomWaterInput(""); }
-              }
-            }}
-            className="flex-1 bg-surface border border-border rounded-xl px-3 py-2 text-text-primary placeholder-text-muted text-sm focus:outline-none focus:border-cyan-app/50 transition-all num"
-          />
-          <button
-            onClick={() => {
-              const ml = parseInt(customWaterInput);
-              if (ml > 0) { logWater(ml); setCustomWaterInput(""); }
-            }}
-            disabled={!customWaterInput || parseInt(customWaterInput) <= 0}
-            className="px-4 py-2 bg-cyan-app/20 border border-cyan-app/30 rounded-xl text-cyan-app text-sm font-medium hover:bg-cyan-app/30 transition-all disabled:opacity-40"
-          >
-            Log
-          </button>
-        </div>
-      </div>
-
-      {/* Weekly calorie bars */}
-      {weeklyData.length > 0 && (
-        <div className="bg-card border border-border rounded-2xl p-6 mb-4">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider">7-Day Calories</h3>
-            <div className="flex items-center gap-3 text-xs text-text-muted">
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-lime inline-block" />Today</span>
-              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-border inline-block" />Goal</span>
-            </div>
-          </div>
-          <div className="flex items-end gap-2 h-24">
-            {weeklyData.map((day) => {
-              const isToday = day.date === todayIso;
-              const pct = day.cals > 0 ? Math.min((day.cals / weeklyMax) * 100, 100) : 0;
-              const goalPct = Math.min((CALORIE_GOAL / weeklyMax) * 100, 100);
-              return (
-                <div key={day.date} className="flex-1 flex flex-col items-center gap-1 group relative">
-                  <div className="w-full flex flex-col justify-end" style={{ height: "80px" }}>
-                    {/* Goal line indicator */}
-                    <div className="absolute w-full border-t border-dashed border-border/60" style={{ bottom: `${goalPct}%` }} />
-                    <div
-                      className={`w-full rounded-t-md transition-all duration-700 ${isToday ? "bg-lime" : day.cals > 0 ? "bg-lime/30" : "bg-surface"}`}
-                      style={{ height: `${Math.max(pct, day.cals > 0 ? 4 : 0)}%`, boxShadow: isToday ? "0 0 12px rgba(182,240,64,0.3)" : "none" }}
-                    />
-                  </div>
-                  <span className={`text-xs font-mono ${isToday ? "text-lime" : "text-text-muted"}`}>{day.label}</span>
-                  {day.cals > 0 && (
-                    <span className="absolute -top-7 left-1/2 -translate-x-1/2 bg-card border border-border rounded px-1.5 py-0.5 text-xs text-text-primary font-mono opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                      {day.cals.toLocaleString()}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Micro-nutrients (only shown when entries with meta exist) */}
-      {(totalFiber > 0 || totalSodium > 0 || totalSugar > 0) && (
-        <div className="bg-card border border-border rounded-2xl px-5 py-4 mb-4">
-          <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider mb-3">Today's Micronutrients</h3>
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: "Fiber", value: Math.round(totalFiber), unit: "g", goal: 30, color: "#b6f040" },
-              { label: "Sugar", value: Math.round(totalSugar), unit: "g", goal: 50, color: "#f0a030" },
-              { label: "Sodium", value: Math.round(totalSodium), unit: "mg", goal: 2300, color: totalSodium > 2300 ? "#ef4444" : "#40c8f0" },
-            ].map((m) => (
-              <div key={m.label} className="text-center">
-                <p className="text-text-muted text-[10px] uppercase tracking-wider mb-1">{m.label}</p>
-                <p className="num font-display font-bold text-lg leading-none" style={{ color: m.color }}>{m.value}<span className="text-text-muted text-xs font-normal ml-0.5">{m.unit}</span></p>
-                <div className="mt-1.5 h-1 bg-canvas rounded-full overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: `${Math.min((m.value / m.goal) * 100, 100)}%`, background: m.color }} />
-                </div>
-                <p className="text-text-muted text-[10px] mt-0.5">/ {m.goal}{m.unit}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Vitamins & Minerals */}
-      {hasVitaminData && (
-        <div className="bg-card border border-border rounded-2xl px-5 py-4 mb-4">
-          <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider mb-4">Vitamins & Minerals</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { label: "Vitamin C", food: Math.round(totalVitC), supp: Math.round(supplementVitaminBoost.vitamin_c_mg), unit: "mg", dv: 90, color: "#f0a030" },
-              { label: "Vitamin D", food: +totalVitD.toFixed(1), supp: +supplementVitaminBoost.vitamin_d_mcg.toFixed(1), unit: "mcg", dv: 20, color: "#b6f040" },
-              { label: "Vitamin B12", food: +totalB12.toFixed(1), supp: +supplementVitaminBoost.vitamin_b12_mcg.toFixed(1), unit: "mcg", dv: 2.4, color: "#40c8f0" },
-              { label: "Calcium", food: Math.round(totalCalcium), supp: Math.round(supplementVitaminBoost.calcium_mg), unit: "mg", dv: 1000, color: "#b6f040" },
-              { label: "Iron", food: +totalIron.toFixed(1), supp: +supplementVitaminBoost.iron_mg.toFixed(1), unit: "mg", dv: 18, color: "#f0a030" },
-              { label: "Potassium", food: Math.round(totalPotassium), supp: Math.round(supplementVitaminBoost.potassium_mg), unit: "mg", dv: 4700, color: "#40c8f0" },
-              { label: "Magnesium", food: Math.round(totalMagnesium), supp: Math.round(supplementVitaminBoost.magnesium_mg), unit: "mg", dv: 420, color: "#b6f040" },
-            ].map((v) => {
-              const total = v.food + v.supp;
-              const foodPct = Math.min(100, (v.food / v.dv) * 100);
-              const suppPct = Math.min(100 - foodPct, (v.supp / v.dv) * 100);
-              const totalPct = Math.min(100, (total / v.dv) * 100);
-              return (
-                <div key={v.label} className="bg-surface border border-border rounded-xl p-3">
-                  <p className="text-text-muted text-[10px] uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                    {v.label}
-                    {v.supp > 0 && <span className="text-lime/50" title="Includes supplement contribution">💊</span>}
-                  </p>
-                  <p className="num font-display font-bold text-base leading-none" style={{ color: v.color }}>
-                    {total}<span className="text-text-muted text-[10px] font-normal ml-0.5">{v.unit}</span>
-                  </p>
-                  <div className="mt-2 h-1 bg-canvas rounded-full overflow-hidden flex">
-                    <div className="h-full transition-all" style={{ width: `${foodPct}%`, background: v.color }} />
-                    {suppPct > 0 && <div className="h-full transition-all" style={{ width: `${suppPct}%`, background: `${v.color}55` }} />}
-                  </div>
-                  <p className="text-text-muted text-[10px] mt-1">
-                    {Math.round(totalPct)}% DV
-                    {v.supp > 0 && <span className="text-text-muted/50 ml-1">(+{v.supp} supp)</span>}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-          <p className="text-text-muted text-[10px] mt-3">
-            From food (solid) + supplements (faded). AI estimates from logged meals.
-          </p>
-        </div>
-      )}
-
-      {/* Quick actions */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-        {QUICK_ACTIONS.map((a) => (
-          <Link key={a.href} href={a.href} className="bg-card border border-border rounded-2xl p-5 hover:border-border-bright hover:shadow-card-hover transition-all group">
-            <span className="text-3xl mb-3 block">{a.icon}</span>
-            <h3 className="font-display font-bold text-text-primary text-sm group-hover:text-lime transition-colors">{a.label}</h3>
-            <p className="text-text-muted text-xs mt-1">{a.desc}</p>
-          </Link>
-        ))}
-      </div>
-
-      {/* AI Coach */}
-      {showInsights && (
-        <div className="bg-card border border-border rounded-2xl p-6 mb-4">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-2 h-2 rounded-full bg-lime animate-pulse-slow" />
-            <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider">AI Coach</h3>
-            <span className="ml-auto text-text-muted text-xs font-mono">Last 7 days</span>
-          </div>
-          {insightsLoading ? (
-            <div className="space-y-3">{[1, 2, 3].map((i) => <div key={i} className="h-14 bg-surface rounded-xl animate-pulse" />)}</div>
-          ) : insights ? (
-            <div className="space-y-3">
-              {insights.map((insight, i) => (
-                <div key={i} className="flex gap-3 p-4 bg-surface border border-border rounded-xl">
-                  <span className="text-xl flex-shrink-0">{INSIGHT_ICONS[insight.type] || "⚡"}</span>
-                  <div>
-                    <p className="text-text-primary text-sm font-medium mb-0.5">{insight.title}</p>
-                    <p className="text-text-secondary text-xs leading-relaxed">{insight.body}</p>
-                  </div>
-                </div>
+            )}
+            {supplementWaterBonus === 0 && <div className="mb-2" />}
+            <div className="flex gap-2">
+              {[{ label: "+ Glass", ml: 250 }, { label: "+ Bottle", ml: 500 }, { label: "+ Large", ml: 750 }].map(({ label, ml }) => (
+                <button key={ml} onClick={() => logWater(ml)}
+                  className="flex-1 py-1.5 bg-cyan-app/10 border border-cyan-app/20 rounded-xl text-cyan-app text-xs font-medium hover:bg-cyan-app/20 transition-all">
+                  {label}
+                </button>
               ))}
-              <button onClick={() => { localStorage.removeItem("forage_insights"); fetchInsights([], onboarding); }}
-                className="text-text-muted text-xs hover:text-text-secondary transition-colors mt-1">
-                Refresh insights ↺
-              </button>
             </div>
-          ) : null}
-        </div>
-      )}
+            <div className="flex gap-2 mt-2">
+              <input
+                type="number" min="1" placeholder="Custom ml"
+                value={customWaterInput}
+                onChange={(e) => setCustomWaterInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { const ml = parseInt(customWaterInput); if (ml > 0) { logWater(ml); setCustomWaterInput(""); } } }}
+                className="flex-1 bg-surface border border-border rounded-xl px-3 py-2 text-text-primary placeholder-text-muted text-sm focus:outline-none focus:border-cyan-app/50 transition-all num"
+              />
+              <button
+                onClick={() => { const ml = parseInt(customWaterInput); if (ml > 0) { logWater(ml); setCustomWaterInput(""); } }}
+                disabled={!customWaterInput || parseInt(customWaterInput) <= 0}
+                className="px-3 py-2 bg-cyan-app/20 border border-cyan-app/30 rounded-xl text-cyan-app text-sm font-medium hover:bg-cyan-app/30 transition-all disabled:opacity-40"
+              >Log</button>
+            </div>
+          </div>
 
-      {/* Supplements */}
-      {supplements.length > 0 && (
-        <div className="bg-card border border-border rounded-2xl p-5 mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-base">💊</span>
-              <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider">Today&apos;s Supplements</h3>
-            </div>
-            <Link href="/dashboard/settings/supplements" className="text-text-muted text-xs hover:text-text-secondary transition-colors">Manage →</Link>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {supplements.map((s) => (
-              <div key={s.id} className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-border rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-lime flex-shrink-0" />
-                <span className="text-text-secondary text-xs font-medium">{s.name}</span>
-                {s.dose && <span className="text-text-muted text-xs">{s.dose}</span>}
-                {s.timing !== "any" && <span className="text-text-muted/60 text-[10px]">· {s.timing}</span>}
-              </div>
-            ))}
-          </div>
-          {supplementNotes.length > 0 && (
-            <div className="mt-3 space-y-1.5">
-              {supplementNotes.slice(0, 4).map(({ name, note }) => (
-                <div key={name} className="flex gap-2 px-3 py-2 bg-canvas border border-border rounded-xl">
-                  <span className="text-lime text-[10px] font-bold flex-shrink-0 mt-0.5">→</span>
-                  <p className="text-text-muted text-[10px] leading-relaxed">
-                    <span className="text-text-secondary font-medium">{name}:</span> {note}
-                  </p>
+          {/* Supplements */}
+          {supplements.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">💊</span>
+                  <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider">Supplements</h3>
                 </div>
+                <Link href="/dashboard/settings/supplements" className="text-text-muted text-xs hover:text-text-secondary transition-colors">Manage →</Link>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {supplements.map((s) => (
+                  <div key={s.id} className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-border rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-lime flex-shrink-0" />
+                    <span className="text-text-secondary text-xs font-medium">{s.name}</span>
+                    {s.dose && <span className="text-text-muted text-xs">{s.dose}</span>}
+                  </div>
+                ))}
+              </div>
+              {supplementNotes.length > 0 && (
+                <div className="mt-3 space-y-1.5">
+                  {supplementNotes.slice(0, 3).map(({ name, note }) => (
+                    <div key={name} className="flex gap-2 px-3 py-2 bg-canvas border border-border rounded-xl">
+                      <span className="text-lime text-[10px] font-bold flex-shrink-0 mt-0.5">→</span>
+                      <p className="text-text-muted text-[10px] leading-relaxed">
+                        <span className="text-text-secondary font-medium">{name}:</span> {note}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Quick actions */}
+          <div className="bg-card border border-border rounded-2xl p-5">
+            <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider mb-4">Quick Actions</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {QUICK_ACTIONS.map((a) => (
+                <Link key={a.href} href={a.href} className="bg-surface border border-border rounded-2xl p-4 hover:border-border-bright transition-all group flex flex-col">
+                  <span className="text-2xl mb-2 block">{a.icon}</span>
+                  <h3 className="font-display font-bold text-text-primary text-xs group-hover:text-lime transition-colors leading-tight">{a.label}</h3>
+                  <p className="text-text-muted text-[10px] mt-0.5 leading-tight">{a.desc}</p>
+                </Link>
               ))}
+            </div>
+          </div>
+
+          {/* AI Coach */}
+          {showInsights && (
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-2 h-2 rounded-full bg-lime animate-pulse-slow" />
+                <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider">AI Coach</h3>
+                <span className="ml-auto text-text-muted text-xs font-mono">7 days</span>
+              </div>
+              {insightsLoading ? (
+                <div className="space-y-3">{[1, 2, 3].map((i) => <div key={i} className="h-14 bg-surface rounded-xl animate-pulse" />)}</div>
+              ) : insights ? (
+                <div className="space-y-3">
+                  {insights.map((insight, i) => (
+                    <div key={i} className="flex gap-3 p-3 bg-surface border border-border rounded-xl">
+                      <span className="text-base flex-shrink-0">{INSIGHT_ICONS[insight.type] || "⚡"}</span>
+                      <div>
+                        <p className="text-text-primary text-xs font-medium mb-0.5">{insight.title}</p>
+                        <p className="text-text-secondary text-[11px] leading-relaxed">{insight.body}</p>
+                      </div>
+                    </div>
+                  ))}
+                  <button onClick={() => { localStorage.removeItem("forage_insights"); fetchInsights([], onboarding); }}
+                    className="text-text-muted text-xs hover:text-text-secondary transition-colors">
+                    Refresh insights ↺
+                  </button>
+                </div>
+              ) : null}
             </div>
           )}
         </div>
-      )}
+        {/* ════ END RIGHT COLUMN ════ */}
+      </div>
 
-      {/* Today's log */}
-      <div className="bg-card border border-border rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider">Today's Log</h3>
-          <Link href="/dashboard/calories" className="text-lime text-xs hover:text-lime-glow transition-colors font-mono">+ Add meal</Link>
-        </div>
-        {logs.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-text-muted text-sm">Nothing logged yet today.</p>
-            <Link href="/dashboard/calories" className="text-lime text-sm mt-2 inline-block hover:text-lime-glow">Log your first meal →</Link>
+      {/* ── Mobile-only: Water, supplements, quick actions, AI coach ── */}
+      <div className="lg:hidden mt-4 space-y-4">
+        {/* Water tracking */}
+        <div className="bg-card border border-border rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">💧</span>
+              <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider">Hydration</h3>
+            </div>
+            <span className="num font-mono text-cyan-app text-sm">{waterGlasses}<span className="text-text-muted text-xs">/{waterGoalGlasses} glasses</span></span>
           </div>
-        ) : (
-          <div className="space-y-0">
-            {logs.map((meal, i) => (
-              <div key={meal.id} className={`flex items-center gap-4 py-3 ${i < logs.length - 1 ? "border-b border-border" : ""}`}>
-                <div className="flex-1 min-w-0">
-                  <p className="text-text-primary text-sm font-medium truncate">{meal.name}</p>
-                  <p className="text-text-muted text-xs mt-0.5">
-                    {new Date(meal.logged_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
-                    {" · "}<span className="text-lime/70">{meal.protein_g}g P</span> · {meal.carbs_g}g C · {meal.fat_g}g F
-                  </p>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <span className="num text-text-primary text-sm font-mono">{meal.calories}</span>
-                  <span className="text-text-muted text-xs ml-1">kcal</span>
-                </div>
-              </div>
+          <div className="h-2 bg-canvas rounded-full overflow-hidden mb-3">
+            <div className="h-full bg-cyan-app rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(100, (waterMl / adjustedWaterGoal) * 100)}%`, boxShadow: "0 0 8px rgba(50,173,230,0.4)" }} />
+          </div>
+          <p className="text-text-muted text-xs mb-1">
+            {waterMl >= adjustedWaterGoal ? "✓ Daily goal reached! Stay consistent." : `${adjustedWaterGoal - waterMl}ml left · ${(waterMl / 1000).toFixed(1)}L logged`}
+          </p>
+          {supplementWaterBonus > 0 && (
+            <p className="text-cyan-app/50 text-[10px] mb-3">💊 Goal +{supplementWaterBonus}ml for your supplement stack</p>
+          )}
+          {supplementWaterBonus === 0 && <div className="mb-3" />}
+          <div className="flex gap-2 flex-wrap">
+            {[{ label: "+ Glass", ml: 250 }, { label: "+ Bottle", ml: 500 }, { label: "+ Large", ml: 750 }].map(({ label, ml }) => (
+              <button key={ml} onClick={() => logWater(ml)}
+                className="flex-1 min-w-0 py-2 bg-cyan-app/10 border border-cyan-app/20 rounded-xl text-cyan-app text-xs font-medium hover:bg-cyan-app/20 transition-all">
+                {label} <span className="text-cyan-app/60">{ml}ml</span>
+              </button>
             ))}
+          </div>
+          <div className="flex gap-2 mt-2">
+            <input
+              type="number" min="1" placeholder="Custom amount (ml)"
+              value={customWaterInput}
+              onChange={(e) => setCustomWaterInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { const ml = parseInt(customWaterInput); if (ml > 0) { logWater(ml); setCustomWaterInput(""); } } }}
+              className="flex-1 bg-surface border border-border rounded-xl px-3 py-2 text-text-primary placeholder-text-muted text-sm focus:outline-none focus:border-cyan-app/50 transition-all num"
+            />
+            <button
+              onClick={() => { const ml = parseInt(customWaterInput); if (ml > 0) { logWater(ml); setCustomWaterInput(""); } }}
+              disabled={!customWaterInput || parseInt(customWaterInput) <= 0}
+              className="px-4 py-2 bg-cyan-app/20 border border-cyan-app/30 rounded-xl text-cyan-app text-sm font-medium hover:bg-cyan-app/30 transition-all disabled:opacity-40"
+            >Log</button>
+          </div>
+        </div>
+
+        {/* Supplements */}
+        {supplements.length > 0 && (
+          <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-base">💊</span>
+                <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider">Today&apos;s Supplements</h3>
+              </div>
+              <Link href="/dashboard/settings/supplements" className="text-text-muted text-xs hover:text-text-secondary transition-colors">Manage →</Link>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {supplements.map((s) => (
+                <div key={s.id} className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-border rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-lime flex-shrink-0" />
+                  <span className="text-text-secondary text-xs font-medium">{s.name}</span>
+                  {s.dose && <span className="text-text-muted text-xs">{s.dose}</span>}
+                  {s.timing !== "any" && <span className="text-text-muted/60 text-[10px]">· {s.timing}</span>}
+                </div>
+              ))}
+            </div>
+            {supplementNotes.length > 0 && (
+              <div className="mt-3 space-y-1.5">
+                {supplementNotes.slice(0, 4).map(({ name, note }) => (
+                  <div key={name} className="flex gap-2 px-3 py-2 bg-canvas border border-border rounded-xl">
+                    <span className="text-lime text-[10px] font-bold flex-shrink-0 mt-0.5">→</span>
+                    <p className="text-text-muted text-[10px] leading-relaxed">
+                      <span className="text-text-secondary font-medium">{name}:</span> {note}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Quick actions */}
+        <div className="grid grid-cols-2 gap-3">
+          {QUICK_ACTIONS.map((a) => (
+            <Link key={a.href} href={a.href} className="bg-card border border-border rounded-2xl p-5 hover:border-border-bright transition-all group">
+              <span className="text-3xl mb-3 block">{a.icon}</span>
+              <h3 className="font-display font-bold text-text-primary text-sm group-hover:text-lime transition-colors">{a.label}</h3>
+              <p className="text-text-muted text-xs mt-1">{a.desc}</p>
+            </Link>
+          ))}
+        </div>
+
+        {/* AI Coach */}
+        {showInsights && (
+          <div className="bg-card border border-border rounded-2xl p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-2 h-2 rounded-full bg-lime animate-pulse-slow" />
+              <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider">AI Coach</h3>
+              <span className="ml-auto text-text-muted text-xs font-mono">Last 7 days</span>
+            </div>
+            {insightsLoading ? (
+              <div className="space-y-3">{[1, 2, 3].map((i) => <div key={i} className="h-14 bg-surface rounded-xl animate-pulse" />)}</div>
+            ) : insights ? (
+              <div className="space-y-3">
+                {insights.map((insight, i) => (
+                  <div key={i} className="flex gap-3 p-4 bg-surface border border-border rounded-xl">
+                    <span className="text-xl flex-shrink-0">{INSIGHT_ICONS[insight.type] || "⚡"}</span>
+                    <div>
+                      <p className="text-text-primary text-sm font-medium mb-0.5">{insight.title}</p>
+                      <p className="text-text-secondary text-xs leading-relaxed">{insight.body}</p>
+                    </div>
+                  </div>
+                ))}
+                <button onClick={() => { localStorage.removeItem("forage_insights"); fetchInsights([], onboarding); }}
+                  className="text-text-muted text-xs hover:text-text-secondary transition-colors mt-1">
+                  Refresh insights ↺
+                </button>
+              </div>
+            ) : null}
           </div>
         )}
       </div>
