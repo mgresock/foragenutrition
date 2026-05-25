@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ForageLogo } from "@/components/brand/ForageLogo";
@@ -147,7 +147,6 @@ const MORE_HREFS = MORE_NAV.map((i) => i.href);
 
 export function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
   const supabase = createClient();
   const [profile, setProfile] = useState<{ display_name: string; avatar_url: string | null } | null>(null);
   const [email, setEmail] = useState("");
