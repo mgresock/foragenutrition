@@ -11,7 +11,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email is required." }, { status: 400 });
     }
 
-    const origin = new URL(req.url).origin;
+    // Use the configured site URL so reset links always point to the right deployment.
+    // Set NEXT_PUBLIC_SITE_URL in Vercel env vars to your production domain.
+    const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? new URL(req.url).origin;
 
     // Generate a recovery link via admin — this also verifies the account exists.
     // If the email has no account, Supabase returns an error.
