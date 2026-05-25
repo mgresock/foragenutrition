@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const next = searchParams.get("next"); // e.g. /auth/update-password
 
   if (code) {
     const cookieStore = await cookies();
@@ -25,6 +26,11 @@ export async function GET(request: NextRequest) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // If there's an explicit next param (e.g. password reset), use it
+      if (next) {
+        return NextResponse.redirect(new URL(next, origin));
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: onboarding } = await supabase
@@ -32,9 +38,8 @@ export async function GET(request: NextRequest) {
           .select("completed_at")
           .eq("user_id", user.id)
           .single();
-        // Only send to onboarding if they have no record at all (brand new user)
         return NextResponse.redirect(
-          new URL(onboarding ? "/dashboard" : "/onboarding/profile", origin)
+          new URL(onboarding?.completed_at ? "/dashboard" : "/onboarding/profile", origin)
         );
       }
     }
