@@ -23,6 +23,7 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState("");
 
   useEffect(() => {
     setError("");
@@ -30,16 +31,28 @@ export function AuthForm({ mode }: AuthFormProps) {
     setConfirmationSent(false);
     setShowForgot(false);
     setForgotSent(false);
+    setForgotError("");
   }, [mode]);
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setForgotLoading(true);
-    const supabaseClient = createClient();
-    await supabaseClient.auth.resetPasswordForEmail(forgotEmail, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/auth/update-password`,
+    setForgotError("");
+
+    const res = await fetch("/api/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: forgotEmail }),
     });
+
     setForgotLoading(false);
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setForgotError(body.error || "Something went wrong. Please try again.");
+      return;
+    }
+
     setForgotSent(true);
   };
 
@@ -168,11 +181,18 @@ export function AuthForm({ mode }: AuthFormProps) {
               <div>
                 <label className="block text-xs text-text-secondary mb-2 uppercase tracking-wider">Email</label>
                 <input
-                  type="email" required value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)}
+                  type="email" required value={forgotEmail} onChange={(e) => { setForgotEmail(e.target.value); setForgotError(""); }}
                   placeholder="you@example.com"
-                  className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-text-primary placeholder-text-muted text-sm focus:outline-none focus:border-lime/50 transition-all"
+                  className={`w-full bg-surface border rounded-xl px-4 py-3 text-text-primary placeholder-text-muted text-sm focus:outline-none transition-all ${
+                    forgotError ? "border-red-500/50 focus:border-red-500" : "border-border focus:border-lime/50"
+                  }`}
                 />
               </div>
+              {forgotError && (
+                <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-lg px-4 py-2">
+                  {forgotError}
+                </p>
+              )}
               <button type="submit" disabled={forgotLoading}
                 className="w-full bg-lime text-canvas font-display font-bold py-3.5 rounded-xl text-sm uppercase tracking-wider hover:bg-lime-glow transition-all shadow-lime-sm disabled:opacity-50 flex items-center justify-center gap-2">
                 {forgotLoading ? <><ForageSpinner size={16} onLight />Sending…</> : "Send Reset Link"}
