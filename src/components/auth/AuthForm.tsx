@@ -17,10 +17,12 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [confirmationSent, setConfirmationSent] = useState(false);
 
   useEffect(() => {
     setError("");
     setConfirmPassword("");
+    setConfirmationSent(false);
   }, [mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,14 +36,37 @@ export function AuthForm({ mode }: AuthFormProps) {
         setLoading(false);
         return;
       }
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) { setError(error.message); setLoading(false); return; }
-      router.push("/onboarding/profile");
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
       if (error) { setError(error.message); setLoading(false); return; }
 
-      // Check if onboarding is complete
+      if (data.session) {
+        // Email confirmation is disabled in Supabase — user is immediately active
+        router.push("/onboarding/profile");
+      } else {
+        // Email confirmation is required — show check-your-email screen
+        setConfirmationSent(true);
+      }
+
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        setError(
+          error.message === "Email not confirmed"
+            ? "Please confirm your email first. Check your inbox for a confirmation link."
+            : error.message
+        );
+        setLoading(false);
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: onboarding } = await supabase
@@ -49,12 +74,41 @@ export function AuthForm({ mode }: AuthFormProps) {
           .select("completed_at")
           .eq("user_id", user.id)
           .single();
-        router.push(onboarding ? "/dashboard" : "/onboarding/profile");
+        router.push(onboarding?.completed_at ? "/dashboard" : "/onboarding/profile");
       }
     }
+
     setLoading(false);
   };
 
+  // ── Check-your-email screen ──────────────────────────────────────────────
+  if (confirmationSent) {
+    return (
+      <div className="text-center py-4">
+        <div className="w-14 h-14 rounded-2xl bg-lime/10 border border-lime/20 flex items-center justify-center mx-auto mb-5">
+          <svg className="w-7 h-7 text-lime" fill="none" viewBox="0 0 24 24">
+            <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <h3 className="font-display font-bold text-text-primary text-lg mb-2">Check your inbox</h3>
+        <p className="text-text-secondary text-sm leading-relaxed mb-1">
+          We sent a confirmation link to
+        </p>
+        <p className="text-lime text-sm font-medium mb-4">{email}</p>
+        <p className="text-text-muted text-xs leading-relaxed">
+          Click the link in the email to activate your account, then come back here to sign in.
+        </p>
+        <button
+          onClick={() => setConfirmationSent(false)}
+          className="mt-6 text-text-muted text-xs hover:text-text-secondary transition-colors"
+        >
+          ← Use a different email
+        </button>
+      </div>
+    );
+  }
+
+  // ── Main form ────────────────────────────────────────────────────────────
   return (
     <div>
       <div className="space-y-3 mb-6">
@@ -123,7 +177,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || (mode === "signup" && !!confirmPassword && confirmPassword !== password)}
           className="w-full bg-lime text-canvas font-display font-bold py-3.5 rounded-xl text-sm uppercase tracking-wider hover:bg-lime-glow transition-all shadow-lime-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {loading ? (
@@ -156,7 +210,7 @@ function SocialButton({ provider }: { provider: "google" }) {
       disabled={loading}
       className="w-full flex items-center justify-center gap-3 bg-surface border border-border hover:border-border-bright rounded-xl py-3 text-sm text-text-primary font-medium transition-all hover:bg-card disabled:opacity-50"
     >
-      <GoogleIcon />
+      {loading ? <ForageSpinner size={16} /> : <GoogleIcon />}
       Continue with Google
     </button>
   );
@@ -172,4 +226,3 @@ function GoogleIcon() {
     </svg>
   );
 }
-

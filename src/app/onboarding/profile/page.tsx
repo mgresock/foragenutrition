@@ -78,13 +78,14 @@ export default function ProfilePage() {
         unit_pref: unit,
         updated_at: new Date().toISOString(),
       }, { onConflict: "user_id" }),
-      supabase.from("profiles").update({
+      supabase.from("profiles").upsert({
+        id: user.id,
         goal: primaryGoal,
         age: parseInt(age),
         biological_sex: sex,
         height_cm: toHeightCm(),
         weight_kg: toWeightKg(),
-      }).eq("id", user.id),
+      }, { onConflict: "id" }),
     ]);
 
     const err = onboardErr || profileErr;
