@@ -18,12 +18,20 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [confirmationSent, setConfirmationSent] = useState(false);
+  const [rateLimitSeconds, setRateLimitSeconds] = useState(0);
 
   useEffect(() => {
     setError("");
     setConfirmPassword("");
     setConfirmationSent(false);
   }, [mode]);
+
+  // Countdown timer for rate limit
+  useEffect(() => {
+    if (rateLimitSeconds <= 0) { if (error.startsWith("Too many")) setError(""); return; }
+    const t = setTimeout(() => setRateLimitSeconds((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [rateLimitSeconds]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +53,17 @@ export function AuthForm({ mode }: AuthFormProps) {
         },
       });
 
-      if (error) { setError(error.message); setLoading(false); return; }
+      if (error) {
+        const seconds = parseInt(error.message.match(/after (\d+) seconds/)?.[1] ?? "0");
+        if (seconds > 0) {
+          setRateLimitSeconds(seconds);
+          setError(`Too many attempts — please wait ${seconds}s before trying again.`);
+        } else {
+          setError(error.message);
+        }
+        setLoading(false);
+        return;
+      }
 
       if (data.session) {
         // Email confirmation is disabled in Supabase — user is immediately active
@@ -177,7 +195,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
         <button
           type="submit"
-          disabled={loading || (mode === "signup" && !!confirmPassword && confirmPassword !== password)}
+          disabled={loading || rateLimitSeconds > 0 || (mode === "signup" && !!confirmPassword && confirmPassword !== password)}
           className="w-full bg-lime text-canvas font-display font-bold py-3.5 rounded-xl text-sm uppercase tracking-wider hover:bg-lime-glow transition-all shadow-lime-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {loading ? (
@@ -185,6 +203,8 @@ export function AuthForm({ mode }: AuthFormProps) {
               <ForageSpinner size={16} onLight />
               {mode === "signin" ? "Signing in..." : "Creating account..."}
             </>
+          ) : rateLimitSeconds > 0 ? (
+            `Try again in ${rateLimitSeconds}s`
           ) : mode === "signin" ? "Sign In" : "Create Account"}
         </button>
       </form>
