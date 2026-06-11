@@ -90,7 +90,16 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { action, messages, userProfile, currentList } = body;
+    // Only accept UI-state values from client — profile data is fetched server-side
+    const { action, messages, currentList, selectedStores: clientStores } = body;
+    const selectedStores: string[] = Array.isArray(clientStores) ? clientStores : [];
+
+    // Fetch authoritative profile from DB — never trust client-supplied profile data
+    const [{ data: profileData }, { data: obData }] = await Promise.all([
+      supabase.from("profiles").select("zip_code, weekly_budget, weight_kg").eq("id", user.id).single(),
+      supabase.from("onboarding").select("goals, meals_per_week").eq("user_id", user.id).single(),
+    ]);
+    const userProfile = { ...profileData, ...obData };
 
     if (action === "generate") {
       const budget = userProfile?.weekly_budget ? `$${userProfile.weekly_budget}` : "no strict budget";
@@ -98,7 +107,6 @@ export async function POST(req: NextRequest) {
       const meals = userProfile?.meals_per_week || 14;
       const weightKg = userProfile?.weight_kg;
       const zip = userProfile?.zip_code;
-      const selectedStores: string[] = body.selectedStores ?? [];
 
       let locationLine = "";
       let storeContext: string;

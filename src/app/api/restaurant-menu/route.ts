@@ -105,8 +105,17 @@ export async function POST(req: NextRequest) {
       }, { status: 402 });
     }
 
-    const { restaurant, location, budget, goals, weight_kg, pastedMenu, menuImageBase64, menuImageType } = await req.json();
+    // Only accept user-input fields from client — profile data fetched server-side
+    const { restaurant, location, budget, pastedMenu, menuImageBase64, menuImageType } = await req.json();
     if (!restaurant?.trim()) return NextResponse.json({ error: "Restaurant name required" }, { status: 400 });
+
+    // Fetch authoritative profile from DB
+    const [{ data: profileData }, { data: obData }] = await Promise.all([
+      supabase.from("profiles").select("weight_kg").eq("id", user.id).single(),
+      supabase.from("onboarding").select("goals").eq("user_id", user.id).single(),
+    ]);
+    const goals: string[] = obData?.goals ?? [];
+    const weight_kg: number | undefined = profileData?.weight_kg ?? undefined;
 
     const budgetNote = budget ? `Budget: $${budget} for the meal.` : "No budget constraint — recommend the best options regardless of price.";
     const goalNote = goals?.length ? `User goals: ${goals.join(", ")}.` : "Focus on high protein and low calorie density.";

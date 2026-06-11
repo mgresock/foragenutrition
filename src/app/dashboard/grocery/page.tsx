@@ -111,22 +111,19 @@ export default function GroceryPage() {
   const [inputMsg, setInputMsg] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { loadList(); loadZipAndStores(); }, []);
+  useEffect(() => { loadList(); loadZip(); }, []);
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatMessages, chatLoading]);
 
-  const loadZipAndStores = async () => {
+  // Only pre-fill the saved ZIP — do NOT auto-fetch stores. User must press Go or My Location.
+  const loadZip = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    // zip_code lives in profiles; fall back to onboarding if present
     const [{ data: profileData }, { data: ob }] = await Promise.all([
       supabase.from("profiles").select("zip_code").eq("id", user.id).single(),
       supabase.from("onboarding").select("zip_code").eq("user_id", user.id).single(),
     ]);
     const zip = profileData?.zip_code || ob?.zip_code;
-    if (zip) {
-      setZipCode(zip);
-      fetchStores(zip);
-    }
+    if (zip) setZipCode(zip);
   };
 
   const fetchStores = async (zip: string, coords?: { lat: number; lng: number }) => {
