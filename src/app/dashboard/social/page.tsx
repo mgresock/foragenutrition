@@ -77,14 +77,14 @@ function FriendCard({ f }: { f: FriendProgress }) {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="text-text-muted text-[10px] w-12 flex-shrink-0">Calories</span>
-            <GoalBar value={f.today.calories} max={CALORIE_GOAL} color="#b6f040" />
+            <GoalBar value={f.today.calories} max={CALORIE_GOAL} color="#34C759" />
             <span className="num text-lime text-[10px] font-mono w-14 text-right flex-shrink-0">
               {f.today.calories}<span className="text-text-muted">/{CALORIE_GOAL}</span>
             </span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-text-muted text-[10px] w-12 flex-shrink-0">Protein</span>
-            <GoalBar value={f.today.protein} max={PROTEIN_GOAL} color="#40c8f0" />
+            <GoalBar value={f.today.protein} max={PROTEIN_GOAL} color="#32ADE6" />
             <span className="num text-cyan-app text-[10px] font-mono w-14 text-right flex-shrink-0">
               {f.today.protein}g<span className="text-text-muted">/{PROTEIN_GOAL}g</span>
             </span>
@@ -160,9 +160,7 @@ export default function SocialPage() {
       .single();
     if (prof) {
       setProfile(prof);
-      const devEmails = ["mcgresock@gmail.com"];
-      const effectiveTier = devEmails.includes(user.email ?? "") ? "pro" : ((prof.subscription_tier as "free" | "pro") ?? "free");
-      setTier(effectiveTier);
+      setTier((prof.subscription_tier as "free" | "pro") ?? "free");
     }
 
     // Load friend progress via server API (bypasses RLS to read friends' logs)
@@ -290,7 +288,7 @@ export default function SocialPage() {
   };
 
   const qrUrl = profile?.friend_code
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(profile.friend_code)}&bgcolor=0c0e09&color=b6f040&margin=2`
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(profile.friend_code)}&bgcolor=000000&color=34C759&margin=2`
     : null;
 
   if (loading) {

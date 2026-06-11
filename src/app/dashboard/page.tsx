@@ -158,8 +158,7 @@ export default function DashboardPage() {
       if (profileData) setProfile(profileData);
       if (onboardingData) setOnboarding(onboardingData);
       if (tierData) {
-        const devEmails = ["mcgresock@gmail.com"];
-        const effectiveTier = devEmails.includes(user.email ?? "") ? "pro" : ((tierData.subscription_tier as "free" | "pro") ?? "free");
+        const effectiveTier = (tierData.subscription_tier as "free" | "pro") ?? "free";
         setTier(effectiveTier);
         if (effectiveTier !== "pro") {
           setAiRemaining(Math.max(0, 15 - (tierData.ai_requests_month ?? 0)));

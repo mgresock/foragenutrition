@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
 export interface NearbyStore {
   name: string;
@@ -38,7 +39,7 @@ async function geocodeZip(zip: string): Promise<{ lat: number; lng: number; city
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?postalcode=${encodeURIComponent(zip)}&countrycodes=US&format=json&limit=1&addressdetails=1`,
-      { headers: { "User-Agent": "ForageNutritionApp/1.0 (mcgresock@gmail.com)" }, signal: AbortSignal.timeout(8000) }
+      { headers: { "User-Agent": `ForageNutritionApp/1.0 (${process.env.NEXT_PUBLIC_SITE_URL ?? "https://foragenutrition.app"})` }, signal: AbortSignal.timeout(8000) }
     );
     if (!res.ok) throw new Error("not ok");
     const data = await res.json();
@@ -55,7 +56,7 @@ async function reverseGeocode(lat: number, lng: number): Promise<string> {
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
-      { headers: { "User-Agent": "ForageNutritionApp/1.0 (mcgresock@gmail.com)" }, signal: AbortSignal.timeout(5000) }
+      { headers: { "User-Agent": `ForageNutritionApp/1.0 (${process.env.NEXT_PUBLIC_SITE_URL ?? "https://foragenutrition.app"})` }, signal: AbortSignal.timeout(5000) }
     );
     if (!res.ok) return "";
     const data = await res.json();
@@ -153,6 +154,10 @@ function parseStores(elements: Record<string, unknown>[], lat: number, lng: numb
 }
 
 export async function GET(req: NextRequest) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const params = req.nextUrl.searchParams;
   const rawLat = params.get("lat");
   const rawLng = params.get("lng");

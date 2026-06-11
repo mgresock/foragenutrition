@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { createClient } from "@/lib/supabase/server";
+import { checkAiAccess } from "@/lib/subscription";
 
 export const maxDuration = 60;
 
@@ -9,7 +11,7 @@ async function lookupZip(zip: string): Promise<{ city: string; state: string } |
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?postalcode=${encodeURIComponent(zip)}&countrycodes=US&format=json&limit=1&addressdetails=1`,
-      { headers: { "User-Agent": "ForageNutritionApp/1.0 (mcgresock@gmail.com)" }, signal: AbortSignal.timeout(6000) }
+      { headers: { "User-Agent": `ForageNutritionApp/1.0 (${process.env.NEXT_PUBLIC_SITE_URL ?? "https://foragenutrition.app"})` }, signal: AbortSignal.timeout(6000) }
     );
     if (!res.ok) return null;
     const data = await res.json();
@@ -73,8 +75,37 @@ const GENERATE_TOOL: Anthropic.Tool = {
 
 export async function POST(req: NextRequest) {
   try {
+    // Auth gate — must be a logged-in user within their AI quota
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const access = await checkAiAccess(user.id, user.email ?? "");
+    if (!access.allowed) {
+      return NextResponse.json({
+        error: "Monthly AI limit reached. Upgrade to Pro for unlimited access.",
+        upgrade: true,
+        remaining: 0,
+      }, { status: 402 });
+    }
+
     const body = await req.json();
-    const { action, messages, userProfile, currentList } = body;
+    // Only accept UI-state values from client — profile data is fetched server-side
+    const { action, messages, currentList, selectedStores: clientStores } = body;
+    // Sanitize store names — strip anything that isn't plain text to prevent prompt injection
+    const selectedStores: string[] = Array.isArray(clientStores)
+      ? clientStores
+          .slice(0, 10) // max 10 stores
+          .map((s: unknown) => String(s).replace(/[^\w\s'&.,()-]/g, "").trim().slice(0, 80))
+          .filter(Boolean)
+      : [];
+
+    // Fetch authoritative profile from DB — never trust client-supplied profile data
+    const [{ data: profileData }, { data: obData }] = await Promise.all([
+      supabase.from("profiles").select("zip_code, weekly_budget, weight_kg").eq("id", user.id).single(),
+      supabase.from("onboarding").select("goals, meals_per_week").eq("user_id", user.id).single(),
+    ]);
+    const userProfile = { ...profileData, ...obData };
 
     if (action === "generate") {
       const budget = userProfile?.weekly_budget ? `$${userProfile.weekly_budget}` : "no strict budget";
@@ -82,7 +113,6 @@ export async function POST(req: NextRequest) {
       const meals = userProfile?.meals_per_week || 14;
       const weightKg = userProfile?.weight_kg;
       const zip = userProfile?.zip_code;
-      const selectedStores: string[] = body.selectedStores ?? [];
 
       let locationLine = "";
       let storeContext: string;

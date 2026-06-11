@@ -58,15 +58,15 @@ function MacroRing({ protein, carbs, fat }: { protein: number; carbs: number; fa
     <svg width="128" height="128" viewBox="0 0 100 100" className="-rotate-90">
       <circle cx="50" cy="50" r="40" fill="none" stroke="#1a1f12" strokeWidth="12" />
       {/* protein - lime */}
-      <circle cx="50" cy="50" r="40" fill="none" stroke="#b6f040" strokeWidth="12"
+      <circle cx="50" cy="50" r="40" fill="none" stroke="#34C759" strokeWidth="12"
         strokeDasharray={`${Math.max(0, pLen - gap)} ${C - Math.max(0, pLen - gap)}`}
         strokeDashoffset="0" strokeLinecap="round" />
       {/* carbs - amber */}
-      <circle cx="50" cy="50" r="40" fill="none" stroke="#f0a030" strokeWidth="12"
+      <circle cx="50" cy="50" r="40" fill="none" stroke="#FF9F0A" strokeWidth="12"
         strokeDasharray={`${Math.max(0, cLen - gap)} ${C - Math.max(0, cLen - gap)}`}
         strokeDashoffset={`${-(pLen)}`} strokeLinecap="round" />
       {/* fat - cyan */}
-      <circle cx="50" cy="50" r="40" fill="none" stroke="#40c8f0" strokeWidth="12"
+      <circle cx="50" cy="50" r="40" fill="none" stroke="#32ADE6" strokeWidth="12"
         strokeDasharray={`${Math.max(0, fLen - gap)} ${C - Math.max(0, fLen - gap)}`}
         strokeDashoffset={`${-(pLen + cLen)}`} strokeLinecap="round" />
     </svg>
@@ -352,7 +352,7 @@ function EntryDetailModal({ entry, onClose, onDelete }: { entry: MealLog; onClos
   );
 }
 
-const ITEM_COLORS = ["#b6f040", "#40c8f0", "#f0a030", "#a78bfa", "#f472b6", "#34d399", "#fb923c"];
+const ITEM_COLORS = ["#34C759", "#32ADE6", "#FF9F0A", "#a78bfa", "#f472b6", "#34d399", "#fb923c"];
 
 interface MealGroup { label: string; emoji: string; entries: MealLog[]; }
 
@@ -772,9 +772,9 @@ export default function CaloriesPage() {
                       <div key={entry.id}
                         onClick={() => entries.length >= 2 ? setSelectedGroup({ label, emoji, entries }) : setSelectedEntry(entry)}
                         className={`relative flex items-center gap-4 p-4 group transition-all cursor-pointer hover:bg-surface/50 ${i < entries.length - 1 ? "border-b border-border" : ""} ${savedId === entry.id ? "bg-lime/5" : ""}`}
-                        style={savedId === entry.id ? { boxShadow: "inset 0 0 0 1px rgba(182,240,64,0.3)" } : undefined}>
+                        style={savedId === entry.id ? { boxShadow: "inset 0 0 0 1px rgba(52,199,89,0.3)" } : undefined}>
                         <div className="absolute left-0 top-3 bottom-3 w-0.5 rounded-full"
-                          style={{ background: entry.protein_g >= entry.carbs_g && entry.protein_g >= entry.fat_g ? "#b6f040" : entry.carbs_g >= entry.fat_g ? "#f0a030" : "#40c8f0" }} />
+                          style={{ background: entry.protein_g >= entry.carbs_g && entry.protein_g >= entry.fat_g ? "#34C759" : entry.carbs_g >= entry.fat_g ? "#FF9F0A" : "#32ADE6" }} />
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs flex-shrink-0 ml-2 ${savedId === entry.id ? "bg-lime text-canvas border border-lime" : entry.source === "ai_photo" || entry.source === "ai_describe" || entry.source === "ai_brand" ? "bg-lime/10 text-lime border border-lime/20" : "bg-surface text-text-muted border border-border"}`}>
                           {savedId === entry.id ? "✓" : entry.source.startsWith("ai") ? "AI" : "M"}
                         </div>
@@ -811,7 +811,7 @@ export default function CaloriesPage() {
 
       {activeTab === "camera" && (
         <div className="space-y-4">
-          {(userTier !== "pro" && userEmail.toLowerCase() !== "mcgresock@gmail.com") ? (
+          {userTier !== "pro" ? (
             <div className="bg-card border border-border rounded-2xl p-12 text-center">
               <div className="w-12 h-12 rounded-2xl bg-lime/10 border border-lime/20 flex items-center justify-center mx-auto mb-4">
                 <svg className="w-6 h-6 text-lime" fill="none" viewBox="0 0 24 24">
