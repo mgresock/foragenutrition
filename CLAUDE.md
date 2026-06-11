@@ -1,14 +1,18 @@
 # Forage — Project Context for Claude
 
+## IMPORTANT: On Context Compaction
+When this conversation is compacted, **always update this CLAUDE.md file first** with any new routes, components, architecture decisions, security changes, common gotchas, or env vars discovered during the session. This file is the authoritative project memory — keep it current.
+
 ## App Overview
 **Forage** — a full-stack gym-focused nutrition + grocery savings app. Helps users eat better, save money on groceries, and sync health data from wearables. Target audience: gym-goers building muscle.
 
 ## Tech Stack
 - **Next.js 15** — App Router, TypeScript, `"use client"` where needed
-- **Supabase** — PostgreSQL, Row Level Security (RLS), Auth (Google OAuth), Storage (avatars, food-photos)
-- **Anthropic Claude API** — `claude-haiku-4-5-20251001` for text/brand food analysis; `claude-opus-4-7` for image analysis, restaurant picks, grocery AI
+- **Supabase** — PostgreSQL, Row Level Security (RLS), Auth (Google OAuth + email/password), Storage (avatars, food-photos)
+- **Anthropic Claude API** — `claude-haiku-4-5-20251001` for all AI features (text, brand, grocery, restaurant, insights)
 - **OpenStreetMap Overpass API** — free, no-key local store + restaurant discovery by lat/lng radius (5 mirror endpoints tried in parallel via `Promise.any()`)
 - **Nominatim geocoding** — free ZIP → lat/lng (requires User-Agent header)
+- **Resend** — transactional email (password reset). `RESEND_API_KEY` env var.
 - **Whoop Developer API** — OAuth2, recovery/sleep/workout data endpoints
 - **Stripe** — subscription billing (`stripe` npm package); webhooks update `profiles.subscription_tier`
 - **Tailwind CSS** — custom dark design system (see below)
@@ -91,13 +95,14 @@ Key policies:
 ## Supabase Clients
 - `src/lib/supabase/client.ts` — browser client (`createClient`)
 - `src/lib/supabase/server.ts` — server client (`createClient` with cookies) — use in API routes for auth
-- `src/lib/supabase/admin.ts` — service role client (`adminSupabase`) — bypasses RLS, used for Whoop, friend progress, Stripe webhook updates
+- `src/lib/supabase/admin.ts` — service role client (`adminSupabase`) — bypasses RLS, used for Whoop, friend progress, Stripe webhook updates, forgot-password link generation
 
 ## App Routes
 
 ### Pages
 ```
-/                               Landing / login
+/                               Landing / login (email/password + Google OAuth)
+/auth/update-password           Password reset completion page (after clicking email link)
 /onboarding/profile             Age, height, weight, sex
 /onboarding/location            ZIP code
 /onboarding/budget              Weekly budget slider
@@ -119,13 +124,15 @@ Key policies:
 
 ### API Routes
 ```
-POST /api/analyze-food          Food analysis → macros + vitamins (Haiku for text/brand, Opus for image)
-POST /api/grocery-ai            Claude grocery list chat (Opus)
-POST /api/scan-receipt          Receipt vision parse (Opus)
+POST /api/analyze-food          Food analysis → macros + vitamins (Haiku)
+POST /api/grocery-ai            Claude grocery list + chat (Haiku)
+POST /api/scan-receipt          Receipt vision parse (Haiku) — Pro only
 GET  /api/nearby-stores         Overpass API store finder — parallel Promise.any() across 5 mirrors
 GET  /api/nearby-restaurants    Overpass API restaurant finder by ZIP (healthTag classification)
-POST /api/restaurant-menu       Claude tool_use → healthy menu picks (Opus)
-POST /api/nutrition-insights    Claude AI coaching tips from 7-day logs
+POST /api/restaurant-menu       Claude tool_use → healthy menu picks (Haiku)
+POST /api/nutrition-insights    Claude AI coaching tips from 7-day logs (Haiku)
+POST /api/forgot-password       Verify account exists → send Resend reset email (3 req/10min per email)
+GET  /api/geocode               ZIP→lat/lng or lat/lng→city via Nominatim (auth required, 30 req/min per IP)
 GET  /api/friends/progress      Friend circle daily progress (adminSupabase)
 POST /api/stripe/checkout       Create Stripe Checkout session → returns { url }
 POST /api/stripe/webhook        Stripe webhook handler → updates subscription_tier in profiles
@@ -139,28 +146,110 @@ GET  /api/icon/[size]           Dynamic PNG icon generation (192, 512)
 - `src/components/ui/UserAvatar.tsx` — handles avatar image with `onError` fallback to AnonAvatar; use this everywhere instead of raw `<img>`
 - `src/components/ui/AnonAvatar.tsx` — SVG anonymous person silhouette
 - `src/components/ui/MacroRing.tsx` — SVG donut chart for macro breakdown
-- `src/components/layout/Sidebar.tsx` — Nav sidebar, loads real profile, uses UserAvatar; includes Supplements nav item
+- `src/components/layout/Sidebar.tsx` — Nav sidebar; accepts `initialProfile` prop from server layout (no client Supabase call); includes Supplements nav item
 - `src/lib/supplementEffects.ts` — per-supplement water/vitamin/dietary effect modifiers; `getSupplementEffect(name)` returns `SupplementEffect | null`
 
+## Server-Side Data Fetching Architecture
+Dashboard data is fetched server-side to avoid exposing Supabase REST calls in DevTools Network tab.
+
+### Layout → Sidebar pattern
+- `src/app/dashboard/layout.tsx` is an **async server component** — fetches `display_name, avatar_url` from `profiles`, passes as `initialProfile` prop to `<Sidebar>`
+- `Sidebar.tsx` accepts `{ initialProfile }` prop and initializes state from it — **no client-side Supabase calls**
+
+### Settings pages — server wrapper + client form
+Each settings page splits into two files:
+- `page.tsx` — async server component: fetches initial data, passes as props (no "use client")
+- `*Form.tsx` / `*Content.tsx` — client component: handles interactive state and save operations
+
+| Route | Server page | Client form |
+|-------|-------------|-------------|
+| `/settings/profile` | `page.tsx` fetches `profiles` + `onboarding` | `ProfileForm.tsx` |
+| `/settings/goals` | `page.tsx` fetches `onboarding` | `GoalsForm.tsx` |
+| `/settings/grocery` | `page.tsx` fetches `onboarding` | `GroceryForm.tsx` |
+| `/settings/billing` | `page.tsx` fetches `profiles` | `BillingContent.tsx` |
+
+**Rule:** Initial reads → server-side. Write/save operations → client-side Supabase (user-triggered, acceptable). Never trust client-supplied profile/goals/weight data in AI routes — always fetch from DB server-side.
+
 ## AI Configuration
-- **Text/brand food analysis**: `claude-haiku-4-5-20251001` — fast, cheap, same accuracy for nutrition lookups
-- **Image food analysis**: `claude-opus-4-7` — needs vision quality
-- **Restaurant/grocery/insights**: `claude-opus-4-7` — complex reasoning
-- **Do NOT use `temperature: 0`** with claude-opus-4-7 — causes API errors
-- **Always use tool_use** (`tool_choice: { type: "any" }`) for structured data — far more consistent than free-form JSON
+- **All AI features**: `claude-haiku-4-5-20251001` — fast and accurate for all use cases
+- **Do NOT use `temperature: 0`** — can cause API errors; use `tool_use` for consistency instead
+- **Always use tool_use** (`tool_choice: { type: "any" }` or `{ type: "tool", name: "..." }`) for structured data
 - Food analysis returns: `{ name, calories, protein, carbs, fat, fiber, sugar, saturated_fat, sodium, protein_quality, carb_type, confidence, notes, vitamin_c_mg, vitamin_d_mcg, vitamin_b12_mcg, calcium_mg, iron_mg, potassium_mg, magnesium_mg }`
+
+## Security Architecture
+All API routes must follow this pattern:
+
+### Auth + subscription gates (every AI route)
+```ts
+const supabase = await createClient();
+const { data: { user } } = await supabase.auth.getUser();
+if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+const access = await checkAiAccess(user.id, user.email ?? "");
+if (!access.allowed) return NextResponse.json({ error: "...", upgrade: true }, { status: 402 });
+```
+
+### Pro-only feature gate (scan-receipt, restaurant-menu image upload)
+```ts
+const tier = await getUserTier(user.id, user.email ?? "");
+if (tier !== "pro") return NextResponse.json({ error: "...", upgrade: true }, { status: 403 });
+```
+
+### Never trust client-supplied profile data
+Profile, goals, weight, zip, budget — always fetch from DB in API routes. Only accept UI-state from client (e.g. `selectedStores`, `messages`, `action`).
+
+### Input sanitization for AI prompts (prevent prompt injection)
+```ts
+// Strings that go into Claude prompts must be sanitized:
+const name = (body.name ?? "").toString().slice(0, 200);
+const pastedMenu = (body.pastedMenu ?? "").toString().replace(/[^\x20-\x7E\n\r\t]/g, "").slice(0, 5000);
+const selectedStores = clientStores.slice(0, 10)
+  .map((s) => String(s).replace(/[^\w\s'&.,()-]/g, "").trim().slice(0, 80))
+  .filter(Boolean);
+```
+
+### Security headers (middleware.ts)
+Set on every response:
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `X-XSS-Protection: 1; mode=block`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy: camera=(self), microphone=(), geolocation=(self)`
+
+### Origin for Stripe redirects
+Always use `process.env.NEXT_PUBLIC_SITE_URL` — never `req.headers.get("origin")` (spoofable).
+
+### Rate limiting (in-memory Map with TTL)
+- `forgot-password`: 3 req / 10 min per email address
+- `geocode`: 30 req / min per IP
 
 ## Subscription / Monetization
 - `src/lib/subscription.ts` — `checkAiAccess(userId, email)` — call before every AI route
+- `getUserTier(userId, email)` — returns `"pro" | "free"` — use for feature gating (not just AI quota)
 - `DEV_EMAILS = ['mcgresock@gmail.com']` — always returns 'pro', never hits Stripe or usage counter
 - Free tier: 15 AI requests/month; Pro: unlimited
 - `checkAiAccess` returns `{ allowed, tier, remaining }` — return 402 with `{ error, upgrade: true }` when blocked
 - Stripe Checkout → `POST /api/stripe/checkout` → redirects to Stripe hosted page
 - Stripe webhook → `POST /api/stripe/webhook` → updates `profiles.subscription_tier`
 - Stripe env vars: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_MONTHLY_PRICE_ID`, `STRIPE_YEARLY_PRICE_ID`
-- Pricing: $6.99/month or $59.99/year
+- Pricing: $7.99/month or $69.99/year (billed as $5.83/mo)
 - **7-day free trial**: POST `/api/stripe/checkout` with `{ plan: "monthly"|"yearly", trial: true }` — adds `trial_period_days: 7` to subscription_data
 - Test locally: `stripe listen --forward-to localhost:3000/api/stripe/webhook`
+
+## Auth (email/password)
+- Sign up / sign in handled in `src/components/auth/AuthForm.tsx`
+- `friendlyError(msg)` function maps raw Supabase errors to human-readable text
+- Password visibility toggle (eye icon SVG) for password + confirm fields
+- Client-side validation: password >= 6 chars, passwords match on sign-up
+- **Forgot password flow**:
+  1. User clicks "Forgot password?" → UI shows email input
+  2. Client POSTs to `/api/forgot-password`
+  3. Route uses `adminSupabase.auth.admin.generateLink({ type: "recovery", email })` — verifies account exists AND gets reset URL
+  4. If no account → 404 (don't send email); if found → send via Resend
+  5. Email link → `auth/callback?next=/auth/update-password` → `/auth/update-password` page
+  6. `/auth/update-password` calls `supabase.auth.updateUser({ password })`
+- **Supabase redirect URL fix**: always set `redirectTo: process.env.NEXT_PUBLIC_SITE_URL + "/auth/callback"` — never use `req.url` (would use wrong Vercel preview URL)
+- `src/app/auth/callback/route.ts` — handles PKCE code exchange; if `next` param present, redirects there after exchange
 
 ## Dashboard Features
 - **DailyFact**: `useState(FUN_FACTS[0])` + `useEffect` randomize — do NOT use `Math.random()` in useState initializer (causes SSR hydration mismatch)
@@ -179,19 +268,21 @@ GET  /api/icon/[size]           Dynamic PNG icon generation (192, 512)
   2. `nwr["name"~"CHAIN_REGEX",i]["shop"]` — name search **MUST include `["shop"]`** to prevent full-text-scan timeout
 - Both store and restaurant routes detect `data.remark?.includes("timed out")` and throw to trigger fallback
 - `NON_GROCERY` regex filters gas stations (Mobil, Sunoco, Valero, Speedway, etc.) and non-food chains
-- Stores: radius 8km first, expand to 25km if <3 results; grocery page auto-loads on open
-- Restaurants: radius 5km fixed; page auto-loads on open using user's saved ZIP
+- Stores: radius 8km first, expand to 25km if <3 results
+- Restaurants: radius 5km fixed
 
 ## Restaurant Feature
-- Two sections: **Discover Nearby** (ZIP → Overpass, auto-loads on page open) + **Get Healthy Picks** (name + location → Claude)
-- `fetchNearby(zip, filter?)` extracted from `discoverNearby` — accepts zip directly so useEffect can call it before state updates settle
+- Two sections: **Discover Nearby** (ZIP → Overpass) + **Get Healthy Picks** (name + location → Claude)
+- **Neither section auto-loads** — user must press the search button (prevents runaway API costs)
+- `fetchNearby(zip, filter?)` accepts zip directly so it can be called before state updates settle
 - Location field (city, state) is critical for niche/local restaurants
 - Collapsible paste-menu textarea for when web scraping can't find the menu
 - `tryFetchMenuText()` scrapes allmenus.com / menupages.com / grubhub / doordash / yelp
 - `data_source`: 'web_fetch' | 'user_provided' | 'training_data'
+- Menu photo scanning is Pro-only (enforced server-side via `getUserTier()`)
 
 ## Grocery Feature
-- Store finder auto-loads on page open (calls `fetchStores(zip)` from `loadZipAndStores` useEffect)
+- Store finder **does NOT auto-load** — user must press search button (prevents runaway API costs)
 - Manual store input always visible — `addManualStore(name)` adds to both `manualStores` and `selectedStores`
 - Manual stores shown as chips with 📍 icon and ✕ remove button
 
@@ -214,17 +305,22 @@ GET  /api/icon/[size]           Dynamic PNG icon generation (192, 512)
 2. **`profiles` may be empty** for pre-existing Google OAuth users — backfill from `auth.users`
 3. **`meal_logs.source` CHECK constraint** — must be: `('manual', 'ai_photo', 'ai_describe', 'ai_brand')`
 4. **`nutrition_meta` column** — `ALTER TABLE meal_logs ADD COLUMN IF NOT EXISTS nutrition_meta jsonb;`
-5. **Nominatim requires User-Agent header** — requests without it get blocked
-6. **adminSupabase** — use for Whoop tokens, friend progress, Stripe webhook profile updates
+5. **Nominatim requires User-Agent header** — requests without it get blocked; never put personal email in User-Agent in source code
+6. **adminSupabase** — use for Whoop tokens, friend progress, Stripe webhook profile updates, `generateLink` for password reset
 7. **Do NOT chain `.select().single()` after insert** if RLS doesn't allow SELECT
-8. **Do NOT use `temperature: 0`** with claude-opus-4-7 — use tool_use for consistency instead
+8. **Do NOT use `temperature: 0`** with Claude API — use tool_use for consistency instead
 9. **Math.random() in useState** causes SSR hydration mismatch — use `useState(stableDefault)` + `useEffect` to randomize
 10. **UserAvatar component** — always use `src/components/ui/UserAvatar.tsx` instead of raw `<img>` for avatars; handles broken URLs gracefully; use `alt=""` not `alt="avatar"` to prevent alt text display on broken images
 11. **`water_logs` + `supplements` tables** — must be created via SQL migration before those features work
 12. **Stripe columns on profiles** — must run ALTER TABLE migration before billing works
 13. **`supplements.frequency` column** — must run `ALTER TABLE supplements ADD COLUMN IF NOT EXISTS frequency text DEFAULT 'once daily';` if table existed before this column was added
 14. **Overpass full-text-scan** — `nwr["name"~"..."]` without a second indexed tag causes full-text scan → ~22s timeout → empty results. Always pair name-search clauses with `["shop"]` or another indexed tag.
-15. **Auto-load on page open** — restaurants and grocery pages call fetch inside useEffect after loading user ZIP; pass zip directly to fetch function (don't read state, which may not be set yet)
+15. **No auto-load on grocery/restaurant pages** — removed intentionally to prevent accidental API cost. User must press Search.
+16. **Sidebar profile fetch** — Sidebar no longer fetches client-side. Data comes from `dashboard/layout.tsx` server component via `initialProfile` prop.
+17. **Settings pages are split** — `page.tsx` is server component (fetches data); `*Form.tsx`/`*Content.tsx` is client component (handles interaction). Don't put "use client" on `page.tsx`.
+18. **Never hardcode dev email in client JS** — `mcgresock@gmail.com` dev bypass lives only in `src/lib/subscription.ts` server-side. Client code must never reference it.
+19. **Stripe origin** — use `NEXT_PUBLIC_SITE_URL` env var, not `req.headers.get("origin")` (spoofable).
+20. **Password reset redirect** — `generateLink` must use `redirectTo: NEXT_PUBLIC_SITE_URL + "/auth/callback"` not `req.url` (wrong Vercel preview URL).
 
 ## Environment Variables
 ```
@@ -232,6 +328,7 @@ NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY
 ANTHROPIC_API_KEY
+RESEND_API_KEY
 WHOOP_CLIENT_ID
 WHOOP_CLIENT_SECRET
 WHOOP_REDIRECT_URI   (= [your domain]/api/whoop/callback)
@@ -240,4 +337,5 @@ STRIPE_WEBHOOK_SECRET
 STRIPE_MONTHLY_PRICE_ID
 STRIPE_YEARLY_PRICE_ID
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+NEXT_PUBLIC_SITE_URL (= https://yourdomain.com — used for Stripe redirects and password reset links)
 ```
