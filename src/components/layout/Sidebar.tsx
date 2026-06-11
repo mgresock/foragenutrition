@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useState, useRef } from "react";
 import { ForageLogo } from "@/components/brand/ForageLogo";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 
@@ -145,24 +144,13 @@ const MORE_NAV = [
 
 const MORE_HREFS = MORE_NAV.map((i) => i.href);
 
-export function Sidebar() {
+type SidebarProfile = { display_name: string; avatar_url: string | null } | null;
+
+export function Sidebar({ initialProfile = null }: { initialProfile?: SidebarProfile }) {
   const pathname = usePathname();
-  const supabase = createClient();
-  const [profile, setProfile] = useState<{ display_name: string; avatar_url: string | null } | null>(null);
-  const [email, setEmail] = useState("");
+  const [profile] = useState<SidebarProfile>(initialProfile);
   const [showMore, setShowMore] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setEmail(user.email || "");
-      const { data } = await supabase.from("profiles").select("display_name, avatar_url").eq("id", user.id).single();
-      if (data) setProfile(data);
-    };
-    load();
-  }, []);
 
   const isActive = (href: string) =>
     href === "/dashboard"
