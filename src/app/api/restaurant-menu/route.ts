@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { createClient } from "@/lib/supabase/server";
+import { checkAiAccess, getUserTier } from "@/lib/subscription";
+
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 8 MB base64 string length limit
 
 export const maxDuration = 60;
 
@@ -89,8 +93,54 @@ async function tryFetchMenuText(name: string, location: string): Promise<string 
 
 export async function POST(req: NextRequest) {
   try {
-    const { restaurant, location, budget, goals, weight_kg, pastedMenu, menuImageBase64, menuImageType } = await req.json();
-    if (!restaurant?.trim()) return NextResponse.json({ error: "Restaurant name required" }, { status: 400 });
+    // Auth gate
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const access = await checkAiAccess(user.id, user.email ?? "");
+    if (!access.allowed) {
+      return NextResponse.json({
+        error: "Monthly AI limit reached. Upgrade to Pro for unlimited access.",
+        upgrade: true,
+        remaining: 0,
+      }, { status: 402 });
+    }
+
+    // Only accept user-input fields from client — profile data fetched server-side
+    const body = await req.json();
+    const restaurant: string = (body.restaurant ?? "").toString().slice(0, 200);
+    const location: string  = (body.location  ?? "").toString().slice(0, 200);
+    const budget: number | null = typeof body.budget === "number" ? Math.min(Math.max(body.budget, 0), 500) : null;
+    // Sanitize user-supplied text that goes into the AI prompt (prevent prompt injection)
+    const pastedMenu: string = (body.pastedMenu ?? "").toString().replace(/[^\x20-\x7E\n\r\t]/g, "").slice(0, 5000);
+    const menuImageBase64: string | null = body.menuImageBase64 ?? null;
+    const menuImageType: string = body.menuImageType ?? "image/jpeg";
+
+    if (!restaurant.trim()) return NextResponse.json({ error: "Restaurant name required" }, { status: 400 });
+
+    // Photo scan is a Pro-only feature — enforce server-side regardless of client state
+    if (menuImageBase64) {
+      const tier = await getUserTier(user.id, user.email ?? "");
+      if (tier !== "pro") {
+        return NextResponse.json(
+          { error: "Menu photo scanning is a Pro feature. Upgrade to access it.", upgrade: true },
+          { status: 403 }
+        );
+      }
+      // Validate image size (base64 expands ~33%, so 8MB base64 ≈ 6MB raw)
+      if (menuImageBase64.length > MAX_IMAGE_BYTES) {
+        return NextResponse.json({ error: "Image too large. Maximum size is 6 MB." }, { status: 400 });
+      }
+    }
+
+    // Fetch authoritative profile from DB
+    const [{ data: profileData }, { data: obData }] = await Promise.all([
+      supabase.from("profiles").select("weight_kg").eq("id", user.id).single(),
+      supabase.from("onboarding").select("goals").eq("user_id", user.id).single(),
+    ]);
+    const goals: string[] = obData?.goals ?? [];
+    const weight_kg: number | undefined = profileData?.weight_kg ?? undefined;
 
     const budgetNote = budget ? `Budget: $${budget} for the meal.` : "No budget constraint — recommend the best options regardless of price.";
     const goalNote = goals?.length ? `User goals: ${goals.join(", ")}.` : "Focus on high protein and low calorie density.";
@@ -136,7 +186,7 @@ Call suggest_menu_items with 4-6 healthy picks that fit the budget. Focus on: hi
       ? [
           {
             type: "image",
-            source: { type: "base64", media_type: menuImageType ?? "image/jpeg", data: menuImageBase64 },
+            source: { type: "base64", media_type: (menuImageType ?? "image/jpeg") as "image/jpeg" | "image/png" | "image/webp" | "image/gif", data: menuImageBase64 },
           },
           { type: "text", text: promptText },
         ]
