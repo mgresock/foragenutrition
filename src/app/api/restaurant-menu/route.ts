@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { createClient } from "@/lib/supabase/server";
+import { checkAiAccess } from "@/lib/subscription";
 
 export const maxDuration = 60;
 
@@ -89,6 +91,20 @@ async function tryFetchMenuText(name: string, location: string): Promise<string 
 
 export async function POST(req: NextRequest) {
   try {
+    // Auth gate
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const access = await checkAiAccess(user.id, user.email ?? "");
+    if (!access.allowed) {
+      return NextResponse.json({
+        error: "Monthly AI limit reached. Upgrade to Pro for unlimited access.",
+        upgrade: true,
+        remaining: 0,
+      }, { status: 402 });
+    }
+
     const { restaurant, location, budget, goals, weight_kg, pastedMenu, menuImageBase64, menuImageType } = await req.json();
     if (!restaurant?.trim()) return NextResponse.json({ error: "Restaurant name required" }, { status: 400 });
 

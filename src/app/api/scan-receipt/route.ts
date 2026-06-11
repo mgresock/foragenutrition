@@ -1,10 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { createClient } from "@/lib/supabase/server";
+import { checkAiAccess } from "@/lib/subscription";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function POST(req: NextRequest) {
   try {
+    // Auth gate
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const access = await checkAiAccess(user.id, user.email ?? "");
+    if (!access.allowed) {
+      return NextResponse.json({
+        error: "Monthly AI limit reached. Upgrade to Pro for unlimited access.",
+        upgrade: true,
+        remaining: 0,
+      }, { status: 402 });
+    }
+
     const formData = await req.formData();
     const file = formData.get("image") as File | null;
     if (!file) return NextResponse.json({ error: "No image provided" }, { status: 400 });

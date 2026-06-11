@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { createClient } from "@/lib/supabase/server";
+import { checkAiAccess } from "@/lib/subscription";
 
 export const maxDuration = 60;
 
@@ -73,6 +75,20 @@ const GENERATE_TOOL: Anthropic.Tool = {
 
 export async function POST(req: NextRequest) {
   try {
+    // Auth gate — must be a logged-in user within their AI quota
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const access = await checkAiAccess(user.id, user.email ?? "");
+    if (!access.allowed) {
+      return NextResponse.json({
+        error: "Monthly AI limit reached. Upgrade to Pro for unlimited access.",
+        upgrade: true,
+        remaining: 0,
+      }, { status: 402 });
+    }
+
     const body = await req.json();
     const { action, messages, userProfile, currentList } = body;
 

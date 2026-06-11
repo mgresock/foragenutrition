@@ -2,13 +2,40 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { Resend } from "resend";
 
+// Simple in-memory rate limiter: max 3 attempts per email per 10 minutes.
+// Resets on cold start (acceptable for serverless — Supabase also rate-limits on its end).
+const resetAttempts = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 3;
+const WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+
+function isRateLimited(key: string): boolean {
+  const now = Date.now();
+  const entry = resetAttempts.get(key);
+  if (!entry || now > entry.resetAt) {
+    resetAttempts.set(key, { count: 1, resetAt: now + WINDOW_MS });
+    return false;
+  }
+  if (entry.count >= RATE_LIMIT) return true;
+  entry.count++;
+  return false;
+}
+
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: NextRequest) {
   try {
     const { email } = await req.json();
-    if (!email) {
+    if (!email || typeof email !== "string") {
       return NextResponse.json({ error: "Email is required." }, { status: 400 });
+    }
+
+    // Rate limit by normalised email — max 3 attempts per 10 minutes
+    const key = email.toLowerCase().trim();
+    if (isRateLimited(key)) {
+      return NextResponse.json(
+        { error: "Too many reset attempts. Please wait 10 minutes before trying again." },
+        { status: 429 }
+      );
     }
 
     // Use the configured site URL so reset links always point to the right deployment.
