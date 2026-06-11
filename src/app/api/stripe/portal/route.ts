@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No billing account found" }, { status: 404 });
     }
 
-    const origin = req.headers.get("origin") ?? "https://localhost:3000";
+    const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
     const session = await getStripe().billingPortal.sessions.create({
       customer: profile.stripe_customer_id,
       return_url: `${origin}/dashboard/settings/billing`,

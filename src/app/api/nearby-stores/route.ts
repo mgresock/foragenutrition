@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
 export interface NearbyStore {
   name: string;
@@ -153,6 +154,10 @@ function parseStores(elements: Record<string, unknown>[], lat: number, lng: numb
 }
 
 export async function GET(req: NextRequest) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const params = req.nextUrl.searchParams;
   const rawLat = params.get("lat");
   const rawLng = params.get("lng");

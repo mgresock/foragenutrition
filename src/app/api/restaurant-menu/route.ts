@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
-import { checkAiAccess } from "@/lib/subscription";
+import { checkAiAccess, getUserTier } from "@/lib/subscription";
+
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 8 MB base64 string length limit
 
 export const maxDuration = 60;
 
@@ -106,8 +108,31 @@ export async function POST(req: NextRequest) {
     }
 
     // Only accept user-input fields from client — profile data fetched server-side
-    const { restaurant, location, budget, pastedMenu, menuImageBase64, menuImageType } = await req.json();
-    if (!restaurant?.trim()) return NextResponse.json({ error: "Restaurant name required" }, { status: 400 });
+    const body = await req.json();
+    const restaurant: string = (body.restaurant ?? "").toString().slice(0, 200);
+    const location: string  = (body.location  ?? "").toString().slice(0, 200);
+    const budget: number | null = typeof body.budget === "number" ? Math.min(Math.max(body.budget, 0), 500) : null;
+    // Sanitize user-supplied text that goes into the AI prompt (prevent prompt injection)
+    const pastedMenu: string = (body.pastedMenu ?? "").toString().replace(/[^\x20-\x7E\n\r\t]/g, "").slice(0, 5000);
+    const menuImageBase64: string | null = body.menuImageBase64 ?? null;
+    const menuImageType: string = body.menuImageType ?? "image/jpeg";
+
+    if (!restaurant.trim()) return NextResponse.json({ error: "Restaurant name required" }, { status: 400 });
+
+    // Photo scan is a Pro-only feature — enforce server-side regardless of client state
+    if (menuImageBase64) {
+      const tier = await getUserTier(user.id, user.email ?? "");
+      if (tier !== "pro") {
+        return NextResponse.json(
+          { error: "Menu photo scanning is a Pro feature. Upgrade to access it.", upgrade: true },
+          { status: 403 }
+        );
+      }
+      // Validate image size (base64 expands ~33%, so 8MB base64 ≈ 6MB raw)
+      if (menuImageBase64.length > MAX_IMAGE_BYTES) {
+        return NextResponse.json({ error: "Image too large. Maximum size is 6 MB." }, { status: 400 });
+      }
+    }
 
     // Fetch authoritative profile from DB
     const [{ data: profileData }, { data: obData }] = await Promise.all([

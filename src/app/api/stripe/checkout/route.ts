@@ -28,7 +28,8 @@ export async function POST(req: NextRequest) {
       await supabase.from("profiles").update({ stripe_customer_id: customerId }).eq("id", user.id);
     }
 
-    const origin = req.headers.get("origin") ?? "https://localhost:3000";
+    // Use configured site URL — never trust the Origin request header (spoofable)
+    const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",

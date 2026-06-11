@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
 export interface NearbyRestaurant {
   name: string;
@@ -153,6 +154,10 @@ function parseElements(elements: Record<string, unknown>[], originLat: number, o
 }
 
 export async function GET(req: NextRequest) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const params = req.nextUrl.searchParams;
   const filter = params.get("filter") || "all";
 

@@ -92,7 +92,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     // Only accept UI-state values from client — profile data is fetched server-side
     const { action, messages, currentList, selectedStores: clientStores } = body;
-    const selectedStores: string[] = Array.isArray(clientStores) ? clientStores : [];
+    // Sanitize store names — strip anything that isn't plain text to prevent prompt injection
+    const selectedStores: string[] = Array.isArray(clientStores)
+      ? clientStores
+          .slice(0, 10) // max 10 stores
+          .map((s: unknown) => String(s).replace(/[^\w\s'&.,()-]/g, "").trim().slice(0, 80))
+          .filter(Boolean)
+      : [];
 
     // Fetch authoritative profile from DB — never trust client-supplied profile data
     const [{ data: profileData }, { data: obData }] = await Promise.all([
