@@ -25,3 +25,12 @@ Thumbs.db
 # Capacitor native builds
 ios/
 android/
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
+# Local secrets / junk — never commit
+stripe_backup_code.txt
+.claire/

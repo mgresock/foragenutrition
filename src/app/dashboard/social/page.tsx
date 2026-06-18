@@ -211,8 +211,13 @@ export default function SocialPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data: target } = await supabase.from("profiles").select("id, display_name").eq("friend_code", addCode.trim().toUpperCase()).single();
-      if (!target) { setAddStatus("error"); setAddMsg("No user found with that code."); return; }
+      const lookupRes = await fetch("/api/friends/lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: addCode.trim().toUpperCase() }),
+      });
+      if (!lookupRes.ok) { setAddStatus("error"); setAddMsg("No user found with that code."); return; }
+      const target = await lookupRes.json() as { id: string; display_name: string };
       if (target.id === user.id) { setAddStatus("error"); setAddMsg("That's your own code!"); return; }
       const { error } = await supabase.from("friendships").insert({ requester_id: user.id, addressee_id: target.id, status: "accepted" });
       if (error && error.code !== "23505") { setAddStatus("error"); setAddMsg(error.message); return; }

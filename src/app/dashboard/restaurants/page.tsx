@@ -29,7 +29,7 @@ interface RestaurantResult {
   menu_note?: string;
 }
 
-const MACRO_COLORS = { protein: "#b6f040", carbs: "#f0a030", fat: "#40c8f0" };
+const MACRO_COLORS = { protein: "#34C759", carbs: "#FF9F0A", fat: "#32ADE6" };
 
 const POPULAR = [
   "Chipotle", "McDonald's", "Subway", "Chick-fil-A", "Panera Bread",
@@ -145,7 +145,6 @@ export default function RestaurantsPage() {
   const [goals, setGoals] = useState<string[]>([]);
   const [weightKg, setWeightKg] = useState<number | null>(null);
   const [userTier, setUserTier] = useState<"free" | "pro">("free");
-  const [userEmail, setUserEmail] = useState("");
 
   // Discover section
   const [discoverZip, setDiscoverZip] = useState("");
@@ -231,7 +230,6 @@ export default function RestaurantsPage() {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      setUserEmail(user.email ?? "");
       const [{ data: ob }, { data: pr }] = await Promise.all([
         supabase.from("onboarding").select("goals, zip_code").eq("user_id", user.id).single(),
         supabase.from("profiles").select("weight_kg, zip_code, subscription_tier").eq("id", user.id).single(),
@@ -240,10 +238,8 @@ export default function RestaurantsPage() {
       if (pr?.weight_kg) setWeightKg(pr.weight_kg);
       setUserTier((pr?.subscription_tier as "free" | "pro") ?? "free");
       const zip = pr?.zip_code || ob?.zip_code;
-      if (zip) {
-        setDiscoverZip(zip);
-        fetchNearby(zip);
-      }
+      // Only pre-fill the ZIP — user must press Find to load results
+      if (zip) setDiscoverZip(zip);
     };
     load();
   }, []);
@@ -512,7 +508,7 @@ export default function RestaurantsPage() {
                 {/* Photo scan */}
                 <div>
                   <p className="text-[10px] text-text-muted uppercase tracking-wider mb-2">Scan a photo</p>
-                  {(userTier !== "pro" && userEmail.toLowerCase() !== "mcgresock@gmail.com") ? (
+                  {userTier !== "pro" ? (
                     <Link href="/dashboard/settings/billing"
                       className="flex items-center justify-center gap-2 w-full py-3 border border-dashed border-border rounded-xl text-text-muted text-sm hover:border-lime/40 hover:text-lime transition-all">
                       <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24">

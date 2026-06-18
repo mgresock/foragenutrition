@@ -1,8 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
-const UA = "ForageNutritionApp/1.0 (mcgresock@gmail.com)";
+const UA = "ForageNutritionApp/1.0";
+
+// IP-based rate limit: 30 requests per minute per IP
+const ipHits = new Map<string, { count: number; resetAt: number }>();
+function rateLimited(ip: string): boolean {
+  const now = Date.now();
+  const entry = ipHits.get(ip);
+  if (!entry || now > entry.resetAt) { ipHits.set(ip, { count: 1, resetAt: now + 60_000 }); return false; }
+  if (entry.count >= 30) return true;
+  entry.count++;
+  return false;
+}
 
 export async function GET(req: NextRequest) {
+  // Must be authenticated
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  if (rateLimited(ip)) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   const params = req.nextUrl.searchParams;
   const zip = params.get("zip");
   const rawLat = params.get("lat");

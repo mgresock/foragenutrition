@@ -5,6 +5,28 @@ import { createClient } from "@/lib/supabase/client";
 import { ForageSpinner } from "@/components/ui/ForageSpinner";
 import Link from "next/link";
 
+// A single part of a crafted meal — stored inside nutrition_meta.components so
+// the full per-ingredient breakdown can be viewed again later.
+interface MealComponent {
+  name: string;
+  amount: string;
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  fiber_g?: number;
+  sugar_g?: number;
+  saturated_fat_g?: number;
+  sodium_mg?: number;
+  vitamin_c_mg?: number;
+  vitamin_d_mcg?: number;
+  vitamin_b12_mcg?: number;
+  calcium_mg?: number;
+  iron_mg?: number;
+  potassium_mg?: number;
+  magnesium_mg?: number;
+}
+
 interface NutritionMeta {
   fiber_g?: number;
   sugar_g?: number;
@@ -20,8 +42,32 @@ interface NutritionMeta {
   iron_mg?: number;
   potassium_mg?: number;
   magnesium_mg?: number;
+  components?: MealComponent[];
 }
 interface MealLog { id: string; name: string; calories: number; protein_g: number; carbs_g: number; fat_g: number; logged_at: string; source: string; nutrition_meta?: NutritionMeta; }
+
+const MICRO_KEYS = [
+  "fiber_g", "sugar_g", "saturated_fat_g", "sodium_mg",
+  "vitamin_c_mg", "vitamin_d_mcg", "vitamin_b12_mcg",
+  "calcium_mg", "iron_mg", "potassium_mg", "magnesium_mg",
+] as const;
+
+// Sum every macro + micro field across the parts of a crafted meal.
+function aggregateComponents(comps: MealComponent[]) {
+  const round1 = (n: number) => Math.round(n * 10) / 10;
+  const meta: NutritionMeta = { components: comps, protein_quality: "mixed", carb_type: "mixed" };
+  for (const key of MICRO_KEYS) {
+    const total = comps.reduce((s, c) => s + (Number(c[key]) || 0), 0);
+    if (total > 0) (meta as Record<string, unknown>)[key] = round1(total);
+  }
+  return {
+    calories: Math.round(comps.reduce((s, c) => s + (c.calories || 0), 0)),
+    protein_g: round1(comps.reduce((s, c) => s + (c.protein_g || 0), 0)),
+    carbs_g: round1(comps.reduce((s, c) => s + (c.carbs_g || 0), 0)),
+    fat_g: round1(comps.reduce((s, c) => s + (c.fat_g || 0), 0)),
+    nutrition_meta: meta,
+  };
+}
 
 function groupByTime(logs: MealLog[]) {
   const groups = [
@@ -204,6 +250,33 @@ function EntryDetailModal({ entry, onClose, onDelete }: { entry: MealLog; onClos
             </div>
           </div>
         </div>
+
+        {/* Meal components (crafted meals) */}
+        {meta.components && meta.components.length > 0 && (
+          <div className="bg-card border border-border rounded-2xl p-4 mb-3">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-text-muted uppercase tracking-wider">Meal Parts · {meta.components.length}</p>
+              <p className="text-text-muted text-[10px]">protein shown per part</p>
+            </div>
+            <div className="space-y-2.5">
+              {meta.components.map((c, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: ITEM_COLORS[i % ITEM_COLORS.length] }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-text-primary text-sm font-medium truncate leading-tight">{c.name}</p>
+                    {c.amount && <p className="text-text-muted text-[10px] leading-tight">{c.amount}</p>}
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {c.protein_g > 0 && <span className="px-1.5 py-0.5 rounded text-[10px] bg-lime/10 text-lime font-mono border border-lime/20">{Math.round(c.protein_g)}P</span>}
+                    {c.carbs_g > 0 && <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-app/10 text-amber-app font-mono border border-amber-app/20">{Math.round(c.carbs_g)}C</span>}
+                    {c.fat_g > 0 && <span className="px-1.5 py-0.5 rounded text-[10px] bg-cyan-app/10 text-cyan-app font-mono border border-cyan-app/20">{Math.round(c.fat_g)}F</span>}
+                    <span className="num font-display font-bold text-text-primary text-sm w-12 text-right">{Math.round(c.calories)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Protein breakdown */}
         <div className="bg-lime/5 border border-lime/15 rounded-2xl p-4 mb-3">
@@ -473,7 +546,7 @@ function MealGroupModal({ group, onClose, onSelectEntry }: { group: MealGroup; o
   );
 }
 
-type Tab = "log" | "camera" | "describe" | "brand" | "manual";
+type Tab = "log" | "camera" | "describe" | "brand" | "build" | "manual";
 
 export default function CaloriesPage() {
   const supabase = createClient();
@@ -498,6 +571,18 @@ export default function CaloriesPage() {
   const [productName, setProductName] = useState("");
   const [servingSize, setServingSize] = useState("");
   const [describeSource, setDescribeSource] = useState<"ai_photo" | "ai_describe" | "ai_brand">("ai_photo");
+  // Meal builder state
+  const [mealName, setMealName] = useState("");
+  const [components, setComponents] = useState<MealComponent[]>([]);
+  const [compName, setCompName] = useState("");
+  const [compAmount, setCompAmount] = useState("");
+  const [compCals, setCompCals] = useState("");
+  const [compProtein, setCompProtein] = useState("");
+  const [compCarbs, setCompCarbs] = useState("");
+  const [compFat, setCompFat] = useState("");
+  const [compMeta, setCompMeta] = useState<Partial<MealComponent> | null>(null);
+  const [compEstimating, setCompEstimating] = useState(false);
+  const [compError, setCompError] = useState<string | null>(null);
   const [userTier, setUserTier] = useState<"free" | "pro">("free");
   const [userEmail, setUserEmail] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date>(() => { const d = new Date(); d.setHours(0,0,0,0); return d; });
@@ -571,7 +656,7 @@ export default function CaloriesPage() {
   const totalFat = logs.reduce((s, m) => s + m.fat_g, 0);
 
   const visibleTabs: { id: Tab; label: string }[] = isToday
-    ? [{ id: "log", label: "Today's Log" }, { id: "camera", label: "📷 Photo" }, { id: "describe", label: "✍️ Describe" }, { id: "brand", label: "🏪 Brand" }, { id: "manual", label: "Manual" }]
+    ? [{ id: "log", label: "Log" }, { id: "build", label: "🧩 Build" }, { id: "camera", label: "📷 Photo" }, { id: "describe", label: "✍️ Describe" }, { id: "brand", label: "🏪 Brand" }, { id: "manual", label: "Manual" }]
     : [{ id: "log", label: "Log" }];
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -697,6 +782,73 @@ export default function CaloriesPage() {
     setLogs((prev) => prev.filter((e) => e.id !== id));
   };
 
+  // ── Meal builder ──────────────────────────────────────────────────────────
+  // Ask the AI to estimate macros + micros for one ingredient at a given amount.
+  // Fills the macro inputs and stashes the micro detail for when it's added.
+  const estimateComponent = async () => {
+    if (!compName.trim()) return;
+    setCompEstimating(true);
+    setCompError(null);
+    try {
+      const description = `${compAmount.trim()} ${compName.trim()}`.trim();
+      const res = await fetch("/api/analyze-food", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description }),
+      });
+      const data = await res.json();
+      if (res.status === 402) { setCompError("Monthly AI limit reached — add macros manually or upgrade to Pro."); return; }
+      if (data.error || data.calories == null) { setCompError("Couldn't estimate that — try adding the amount, or enter macros manually."); return; }
+      setCompCals(String(data.calories));
+      setCompProtein(String(data.protein ?? ""));
+      setCompCarbs(String(data.carbs ?? ""));
+      setCompFat(String(data.fat ?? ""));
+      setCompMeta({
+        fiber_g: data.fiber, sugar_g: data.sugar, saturated_fat_g: data.saturated_fat, sodium_mg: data.sodium,
+        vitamin_c_mg: data.vitamin_c_mg, vitamin_d_mcg: data.vitamin_d_mcg, vitamin_b12_mcg: data.vitamin_b12_mcg,
+        calcium_mg: data.calcium_mg, iron_mg: data.iron_mg, potassium_mg: data.potassium_mg, magnesium_mg: data.magnesium_mg,
+      });
+    } catch { setCompError("Something went wrong. Please try again."); }
+    finally { setCompEstimating(false); }
+  };
+
+  const addComponent = () => {
+    if (!compName.trim() || !compCals) return;
+    const comp: MealComponent = {
+      name: compName.trim(),
+      amount: compAmount.trim(),
+      calories: Number(compCals) || 0,
+      protein_g: Number(compProtein) || 0,
+      carbs_g: Number(compCarbs) || 0,
+      fat_g: Number(compFat) || 0,
+      ...(compMeta ?? {}),
+    };
+    setComponents((prev) => [...prev, comp]);
+    setCompName(""); setCompAmount(""); setCompCals(""); setCompProtein(""); setCompCarbs(""); setCompFat("");
+    setCompMeta(null); setCompError(null);
+  };
+
+  const removeComponent = (index: number) => {
+    setComponents((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const saveMeal = async () => {
+    if (components.length === 0) return;
+    setSaving(true);
+    const agg = aggregateComponents(components);
+    const name = mealName.trim() || (components.length === 1 ? components[0].name : `${components[0].name} + ${components.length - 1} more`);
+    const ok = await saveToDb({ name, ...agg, source: "manual" });
+    if (ok) {
+      setComponents([]); setMealName("");
+      setCompName(""); setCompAmount(""); setCompCals(""); setCompProtein(""); setCompCarbs(""); setCompFat(""); setCompMeta(null);
+      await switchToLog();
+    } else {
+      setSaving(false);
+    }
+  };
+
+  const builderTotals = aggregateComponents(components);
+
   return (
     <div className="px-6 py-8 pb-24 lg:pb-8 max-w-3xl">
       <div className="mb-8">
@@ -715,25 +867,47 @@ export default function CaloriesPage() {
           className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-text-muted hover:text-text-primary hover:border-border-bright transition-all text-sm disabled:opacity-30 disabled:cursor-not-allowed">›</button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        {[
-          { label: "Calories", value: Math.round(totalCals), unit: "kcal", color: "text-lime" },
-          { label: "Protein", value: Math.round(totalProtein), unit: "g", color: "text-lime" },
-          { label: "Carbs", value: Math.round(totalCarbs), unit: "g", color: "text-amber-app" },
-          { label: "Fat", value: Math.round(totalFat), unit: "g", color: "text-cyan-app" },
-        ].map((s) => (
-          <div key={s.label} className="bg-card border border-border rounded-xl p-4">
-            <p className="text-text-muted text-xs uppercase tracking-wider mb-1">{s.label}</p>
-            <p className={`num font-display font-black text-2xl ${s.color}`}>{s.value}</p>
-            <p className="text-text-muted text-xs">{s.unit}</p>
+      {/* Daily macro summary — ring + macro split */}
+      <div className="bg-card border border-border rounded-2xl p-5 mb-6">
+        <div className="flex items-center gap-5">
+          <div className="relative flex-shrink-0">
+            <MacroRing protein={totalProtein} carbs={totalCarbs} fat={totalFat} />
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="num font-display font-black text-2xl text-text-primary leading-none">{Math.round(totalCals)}</span>
+              <span className="text-text-muted text-[10px] uppercase tracking-wider mt-0.5">kcal</span>
+            </div>
           </div>
-        ))}
+          <div className="flex-1 min-w-0 space-y-3">
+            {[
+              { label: "Protein", val: totalProtein, mult: 4, color: "bg-lime", text: "text-lime" },
+              { label: "Carbs", val: totalCarbs, mult: 4, color: "bg-amber-app", text: "text-amber-app" },
+              { label: "Fat", val: totalFat, mult: 9, color: "bg-cyan-app", text: "text-cyan-app" },
+            ].map((m) => {
+              const macroCals = totalProtein * 4 + totalCarbs * 4 + totalFat * 9;
+              const pct = macroCals > 0 ? Math.round((m.val * m.mult / macroCals) * 100) : 0;
+              return (
+                <div key={m.label}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-text-secondary text-xs">{m.label}</span>
+                    <span className="text-xs">
+                      <span className={`num font-display font-bold ${m.text}`}>{Math.round(m.val)}g</span>
+                      <span className="text-text-muted"> · {pct}%</span>
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-canvas rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all ${m.color}`} style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      <div className="flex bg-surface border border-border rounded-xl p-1 mb-6">
+      <div className="flex bg-surface border border-border rounded-xl p-1 mb-6 gap-0.5 overflow-x-auto">
         {visibleTabs.map((t) => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
-            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === t.id ? "bg-lime text-canvas font-semibold" : "text-text-secondary hover:text-text-primary"}`}>
+            className={`flex-1 whitespace-nowrap py-2.5 px-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${activeTab === t.id ? "bg-lime text-canvas font-semibold" : "text-text-secondary hover:text-text-primary"}`}>
             {t.label}
           </button>
         ))}
@@ -1051,6 +1225,135 @@ export default function CaloriesPage() {
           onClose={() => setSelectedEntry(null)}
           onDelete={(id) => { removeEntry(id); setSelectedEntry(null); }}
         />
+      )}
+
+      {activeTab === "build" && (
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 bg-card border border-border rounded-2xl px-4 py-3">
+            <span className="text-lime text-sm mt-0.5">🧩</span>
+            <p className="text-text-muted text-xs leading-relaxed">Craft a full meal from individual parts. Add each food with its amount — enter macros yourself or let AI estimate them. You&apos;ll see the combined protein &amp; macro breakdown for every part, saved together as one meal you can reopen anytime.</p>
+          </div>
+
+          {/* Live running total */}
+          {components.length > 0 && (
+            <div className="bg-lime/5 border border-lime/20 rounded-2xl p-5">
+              <div className="flex items-center gap-5">
+                <div className="relative flex-shrink-0">
+                  <MacroRing protein={builderTotals.protein_g} carbs={builderTotals.carbs_g} fat={builderTotals.fat_g} />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="num font-display font-black text-2xl text-text-primary leading-none">{builderTotals.calories}</span>
+                    <span className="text-text-muted text-[10px] uppercase tracking-wider mt-0.5">kcal</span>
+                  </div>
+                </div>
+                <div className="flex-1 grid grid-cols-3 gap-2">
+                  {[
+                    { label: "Protein", val: builderTotals.protein_g, text: "text-lime" },
+                    { label: "Carbs", val: builderTotals.carbs_g, text: "text-amber-app" },
+                    { label: "Fat", val: builderTotals.fat_g, text: "text-cyan-app" },
+                  ].map((m) => (
+                    <div key={m.label} className="text-center bg-surface border border-border rounded-xl py-2.5">
+                      <p className={`num font-display font-black text-xl leading-none ${m.text}`}>{Math.round(m.val)}</p>
+                      <p className="text-text-muted text-[10px] mt-1">g {m.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {(() => {
+                const mm = builderTotals.nutrition_meta;
+                const chips = [
+                  mm.fiber_g ? `${mm.fiber_g}g fiber` : null,
+                  mm.sugar_g ? `${mm.sugar_g}g sugar` : null,
+                  mm.saturated_fat_g ? `${mm.saturated_fat_g}g sat fat` : null,
+                  mm.sodium_mg ? `${mm.sodium_mg}mg sodium` : null,
+                ].filter(Boolean) as string[];
+                return chips.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5 mt-4">
+                    {chips.map((c) => (
+                      <span key={c} className="px-2 py-0.5 rounded-md bg-surface border border-border text-text-muted text-[10px] font-mono">{c}</span>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
+            </div>
+          )}
+
+          {/* Component list */}
+          {components.length > 0 && (
+            <div className="space-y-2">
+              {components.map((c, i) => (
+                <div key={i} className="flex items-center gap-3 bg-card border border-border rounded-xl p-3">
+                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: ITEM_COLORS[i % ITEM_COLORS.length] }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-text-primary text-sm font-medium truncate leading-tight">{c.name}</p>
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      {c.amount && <span className="text-text-muted text-[10px] font-mono">{c.amount}</span>}
+                      {c.protein_g > 0 && <span className="px-1.5 py-0.5 rounded text-[10px] bg-lime/10 text-lime font-mono border border-lime/20">{Math.round(c.protein_g)}P</span>}
+                      {c.carbs_g > 0 && <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-app/10 text-amber-app font-mono border border-amber-app/20">{Math.round(c.carbs_g)}C</span>}
+                      {c.fat_g > 0 && <span className="px-1.5 py-0.5 rounded text-[10px] bg-cyan-app/10 text-cyan-app font-mono border border-cyan-app/20">{Math.round(c.fat_g)}F</span>}
+                    </div>
+                  </div>
+                  <span className="num font-display font-bold text-text-primary text-sm flex-shrink-0">{Math.round(c.calories)}</span>
+                  <button onClick={() => removeComponent(i)}
+                    className="w-6 h-6 rounded-lg bg-surface border border-border flex items-center justify-center text-text-muted hover:text-red-400 hover:border-red-400/30 text-xs flex-shrink-0">✕</button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Add a part */}
+          <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
+            <p className="text-xs text-text-muted uppercase tracking-wider">Add a part</p>
+            <div className="grid grid-cols-3 gap-2">
+              <input type="text" value={compAmount} onChange={(e) => { setCompAmount(e.target.value); setCompMeta(null); }} placeholder="150g / 1 cup"
+                className="col-span-1 bg-surface border border-border rounded-xl px-3 py-2.5 text-text-primary placeholder-text-muted text-sm focus:outline-none focus:border-lime/50 transition-all" />
+              <input type="text" value={compName} onChange={(e) => { setCompName(e.target.value); setCompMeta(null); }} placeholder="Chicken breast"
+                onKeyDown={(e) => { if (e.key === "Enter" && compName.trim() && compCals) addComponent(); }}
+                className="col-span-2 bg-surface border border-border rounded-xl px-3 py-2.5 text-text-primary placeholder-text-muted text-sm focus:outline-none focus:border-lime/50 transition-all" />
+            </div>
+
+            <button onClick={estimateComponent} disabled={!compName.trim() || compEstimating}
+              className="w-full flex items-center justify-center gap-2 bg-lime/10 border border-lime/30 hover:border-lime/50 rounded-xl py-2.5 text-lime font-medium text-sm transition-all hover:bg-lime/15 disabled:opacity-40 disabled:cursor-not-allowed">
+              {compEstimating ? <><ForageSpinner size={14} />Estimating…</> : <>✨ Estimate macros with AI</>}
+            </button>
+
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { label: "Cals", value: compCals, set: setCompCals, unit: "" },
+                { label: "Protein", value: compProtein, set: setCompProtein, unit: "g" },
+                { label: "Carbs", value: compCarbs, set: setCompCarbs, unit: "g" },
+                { label: "Fat", value: compFat, set: setCompFat, unit: "g" },
+              ].map((f) => (
+                <div key={f.label}>
+                  <label className="block text-[10px] text-text-muted mb-1">{f.label}</label>
+                  <input type="number" min={0} value={f.value} onChange={(e) => f.set(e.target.value)} placeholder="0"
+                    className="w-full bg-surface border border-border rounded-xl px-2.5 py-2 text-text-primary placeholder-text-muted text-sm focus:outline-none focus:border-lime/50 transition-all num" />
+                </div>
+              ))}
+            </div>
+
+            {compError && <p className="text-red-400 text-xs bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">{compError}</p>}
+
+            <button onClick={addComponent} disabled={!compName.trim() || !compCals}
+              className="w-full bg-surface border border-border rounded-xl py-2.5 text-text-primary font-medium text-sm hover:border-border-bright transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+              + Add part to meal
+            </button>
+          </div>
+
+          {/* Name & save */}
+          {components.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
+              <div>
+                <label className="block text-xs text-text-secondary mb-2 uppercase tracking-wider">Meal name <span className="text-text-muted font-normal normal-case tracking-normal">(optional)</span></label>
+                <input type="text" value={mealName} onChange={(e) => setMealName(e.target.value)} placeholder="e.g. Post-Workout Bowl"
+                  className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-text-primary placeholder-text-muted text-sm focus:outline-none focus:border-lime/50 transition-all" />
+              </div>
+              <button onClick={saveMeal} disabled={saving}
+                className="w-full bg-lime text-canvas font-display font-bold py-3.5 rounded-xl uppercase tracking-wider hover:bg-lime-glow transition-all shadow-lime-sm disabled:opacity-40 disabled:cursor-not-allowed">
+                {saving ? "Saving…" : `Save Meal · ${components.length} part${components.length !== 1 ? "s" : ""}`}
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
       {activeTab === "manual" && (

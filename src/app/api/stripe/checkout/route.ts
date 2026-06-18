@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { adminSupabase } from "@/lib/supabase/admin";
 import { getStripe, STRIPE_PRICES } from "@/lib/stripe";
 
 export async function POST(req: NextRequest) {
@@ -25,10 +26,13 @@ export async function POST(req: NextRequest) {
         metadata: { supabase_user_id: user.id },
       });
       customerId = customer.id;
-      await supabase.from("profiles").update({ stripe_customer_id: customerId }).eq("id", user.id);
+      // Use service role — `stripe_customer_id` is locked from the authenticated
+      // role (column-level REVOKE) to prevent client-side billing tampering.
+      await adminSupabase.from("profiles").update({ stripe_customer_id: customerId }).eq("id", user.id);
     }
 
-    const origin = req.headers.get("origin") ?? "https://localhost:3000";
+    // Use configured site URL — never trust the Origin request header (spoofable)
+    const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",

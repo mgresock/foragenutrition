@@ -13,6 +13,7 @@ When this conversation is compacted, **always update this CLAUDE.md file first**
 - **OpenStreetMap Overpass API** — free, no-key local store + restaurant discovery by lat/lng radius (5 mirror endpoints tried in parallel via `Promise.any()`)
 - **Nominatim geocoding** — free ZIP → lat/lng (requires User-Agent header)
 - **Resend** — transactional email (password reset). `RESEND_API_KEY` env var.
+- **Upstash Redis** — site-wide rate limiting via `@upstash/ratelimit` in `src/middleware.ts`. `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` env vars.
 - **Whoop Developer API** — OAuth2, recovery/sleep/workout data endpoints
 - **Stripe** — subscription billing (`stripe` npm package); webhooks update `profiles.subscription_tier`
 - **Tailwind CSS** — custom dark design system (see below)
@@ -108,7 +109,7 @@ Key policies:
 /onboarding/budget              Weekly budget slider
 /onboarding/goals               Goal selection
 /dashboard                      Overview: calorie ring, macros, water, vitamins, Whoop, AI coach
-/dashboard/calories             Log (list) + AI Photo + Describe + Brand tabs
+/dashboard/calories             Log (list) + Build (meal crafter) + AI Photo + Describe + Brand + Manual tabs
 /dashboard/grocery              Store finder + AI grocery list builder
 /dashboard/restaurants          Nearby restaurant discovery + AI healthy picks
 /dashboard/receipts             Receipt scanner
@@ -251,6 +252,14 @@ Always use `process.env.NEXT_PUBLIC_SITE_URL` — never `req.headers.get("origin
 - **Supabase redirect URL fix**: always set `redirectTo: process.env.NEXT_PUBLIC_SITE_URL + "/auth/callback"` — never use `req.url` (would use wrong Vercel preview URL)
 - `src/app/auth/callback/route.ts` — handles PKCE code exchange; if `next` param present, redirects there after exchange
 
+## Calorie Tracker — Meal Builder (`/dashboard/calories` → "🧩 Build" tab)
+- Craft a multi-part meal: add each food with an amount, enter macros manually OR press "✨ Estimate macros with AI" (reuses `/api/analyze-food` describe mode — counts against AI quota, per component).
+- Live running total uses `MacroRing` + macro split; aggregates macros AND micros (fiber/sugar/sat-fat/sodium + 7 vitamins) across all parts via `aggregateComponents()`.
+- Saved as ONE `meal_logs` row, `source: "manual"`, with every part stored in `nutrition_meta.components` (jsonb `MealComponent[]` — flattened macro+micro fields). **No DB migration needed** — reuses the existing `nutrition_meta` column.
+- Viewable later: `EntryDetailModal` renders a "Meal Parts" section (per-part protein/macros) whenever `nutrition_meta.components` is present.
+- The daily summary header is a macro-calculator-style hero (ring + grams + % split), replacing the old 4-stat grid.
+- E2E: `e2e/meal-builder.spec.ts` (gated behind E2E_TEST_EMAIL/PASSWORD) builds → saves → reopens → cleans up.
+
 ## Dashboard Features
 - **DailyFact**: `useState(FUN_FACTS[0])` + `useEffect` randomize — do NOT use `Math.random()` in useState initializer (causes SSR hydration mismatch)
 - **Calorie ring** — SVG progress ring, 2600 kcal goal
@@ -321,6 +330,32 @@ Always use `process.env.NEXT_PUBLIC_SITE_URL` — never `req.headers.get("origin
 18. **Never hardcode dev email in client JS** — `mcgresock@gmail.com` dev bypass lives only in `src/lib/subscription.ts` server-side. Client code must never reference it.
 19. **Stripe origin** — use `NEXT_PUBLIC_SITE_URL` env var, not `req.headers.get("origin")` (spoofable).
 20. **Password reset redirect** — `generateLink` must use `redirectTo: NEXT_PUBLIC_SITE_URL + "/auth/callback"` not `req.url` (wrong Vercel preview URL).
+21. **In-memory rate limiting fails on Vercel** — serverless is stateless, so `Map`-based limiters don't work across instances. Use Upstash Redis (`src/lib/ratelimit.ts`). Limiters are null/no-op when Upstash env vars are absent, so local dev works without credentials.
+22. **Never instantiate SDK clients at module top-level if their key may be missing** — `new Resend(process.env.RESEND_API_KEY)` at module scope throws during `next build` page-data collection when the env var isn't set, breaking the whole build. Construct inside the handler after guarding the key (see `forgot-password`/`send-welcome` routes). Stripe uses the lazy `getStripe()` getter in `src/lib/stripe.ts` for the same reason.
+
+## Auth & Password Security
+- **Passwords are never stored in app tables.** All auth goes through Supabase Auth, which bcrypt-hashes credentials into the internal `auth.users` table. No `profiles`/`onboarding` column holds a password.
+- Sign up: `supabase.auth.signUp` · Sign in: `supabase.auth.signInWithPassword` · Reset: `supabase.auth.updateUser({ password })` (client) + `adminSupabase.auth.admin.generateLink({ type: "recovery" })` (server, `forgot-password` route emails the link via Resend).
+- The sign-in/sign-up POST goes directly from the browser SDK to Supabase — it does NOT pass through `src/middleware.ts`, so rate limiting there doesn't gate logins.
+
+## Data Exposure / RLS Hardening
+- **`profiles` SELECT must be own-row only** (`auth.uid() = id`). It must NOT be `USING (true)` — that lets any authenticated user dump every profile (including `stripe_customer_id`, `zip_code`, `weight_kg`, `age`) from the browser console with the anon key.
+- The only cross-user profile read the app needs is the **friend-code lookup**, which now runs server-side via `/api/friends/lookup` (service role, returns only `{ id, display_name }`). Friend progress uses `/api/friends/progress` (service role). So locking the SELECT policy does NOT break social features.
+- Rule of thumb: any time the browser needs another user's data, route it through a server API with `adminSupabase` that returns only safe fields — never widen an RLS SELECT policy to `true`.
+- **Billing/quota columns must be REVOKE'd from the authenticated role.** RLS row policies don't restrict *which columns* a user updates, so with a normal `auth.uid() = id` UPDATE policy a user can self-grant Pro (`subscription_tier`) or reset their AI quota (`ai_requests_month`) from the browser. Column-level `REVOKE UPDATE/INSERT (subscription_tier, ai_requests_month, ai_requests_reset_at, stripe_customer_id, stripe_subscription_id) ON profiles FROM authenticated, anon;` blocks this. Service-role code (webhook, `subscription.ts`, checkout's customer-id write) bypasses it.
+- The Stripe checkout route writes `stripe_customer_id` via `adminSupabase` (not the cookie client) precisely so that column can stay locked from `authenticated`.
+
+## E2E Testing (Playwright)
+- `playwright.config.ts` + `e2e/*.spec.ts`. Run with `npm run test:e2e`. Playwright auto-starts `npm run dev`.
+- `e2e/auth.spec.ts` covers auth-page render, sign-up toggle, and password-mismatch validation (no credentials needed). A real-login test runs only when `E2E_TEST_EMAIL` + `E2E_TEST_PASSWORD` are set (dedicated confirmed test account — never a real user), otherwise skips.
+- Adding Playwright does NOT affect the Next.js build/runtime — `e2e/` and the config are test-only.
+
+## Rate Limiting
+- `src/lib/ratelimit.ts` — Upstash Redis-backed sliding-window limiters: `pageLimiter` (60 req/10s per IP) and `apiLimiter` (20 req/10s per IP). Both `null` if `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` unset.
+- **Rate limiting is INACTIVE until Upstash env vars are set** — without them the limiters no-op (fail-open). Must add `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` to `.env.local` and Vercel for it to actually throttle.
+- Enforced in `src/middleware.ts` before any auth/session work. IP from `x-forwarded-for` (fallback `x-real-ip`). Returns 429 with `Retry-After` header when exceeded.
+- **Stripe webhook (`/api/stripe/webhook`) is exempt** — Stripe bursts retries; dropping those would lose subscription events.
+- Middleware matcher now **includes `/api`** (rate limiting applies to API routes). API routes skip the Supabase session-refresh/redirect logic via an early `return`.
 
 ## Environment Variables
 ```
@@ -338,4 +373,6 @@ STRIPE_MONTHLY_PRICE_ID
 STRIPE_YEARLY_PRICE_ID
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 NEXT_PUBLIC_SITE_URL (= https://yourdomain.com — used for Stripe redirects and password reset links)
+UPSTASH_REDIS_REST_URL    (rate limiting — optional; limiters no-op if unset)
+UPSTASH_REDIS_REST_TOKEN  (rate limiting — optional; limiters no-op if unset)
 ```

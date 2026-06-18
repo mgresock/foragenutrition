@@ -9,12 +9,34 @@ interface AuthFormProps {
   mode: "signin" | "signup";
 }
 
+// Map raw Supabase/API error strings to user-friendly messages
+function friendlyError(msg: string): string {
+  const m = msg.toLowerCase();
+  if (m.includes("invalid login credentials") || m.includes("invalid credentials"))
+    return "Incorrect email or password.";
+  if (m.includes("user already registered") || m.includes("already been registered"))
+    return "An account with this email already exists. Try signing in instead.";
+  if (m.includes("email not confirmed"))
+    return "Please confirm your email first — check your inbox for a confirmation link.";
+  if (m.includes("password should be at least") || m.includes("password must be at least"))
+    return "Password must be at least 6 characters.";
+  if (m.includes("unable to validate email address"))
+    return "That doesn't look like a valid email address.";
+  if (m.includes("signup is disabled"))
+    return "Account creation is currently disabled. Try signing in or contact support.";
+  if (m.includes("email rate limit") || m.includes("rate limit"))
+    return "Too many attempts — please wait a moment before trying again.";
+  return msg; // fall back to raw message if unrecognised
+}
+
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
   const supabase = createClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [confirmationSent, setConfirmationSent] = useState(false);
@@ -23,6 +45,7 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState("");
 
   useEffect(() => {
     setError("");
@@ -30,16 +53,28 @@ export function AuthForm({ mode }: AuthFormProps) {
     setConfirmationSent(false);
     setShowForgot(false);
     setForgotSent(false);
+    setForgotError("");
   }, [mode]);
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setForgotLoading(true);
-    const supabaseClient = createClient();
-    await supabaseClient.auth.resetPasswordForEmail(forgotEmail, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/auth/update-password`,
+    setForgotError("");
+
+    const res = await fetch("/api/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: forgotEmail }),
     });
+
     setForgotLoading(false);
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setForgotError(body.error || "Something went wrong. Please try again.");
+      return;
+    }
+
     setForgotSent(true);
   };
 
@@ -52,16 +87,21 @@ export function AuthForm({ mode }: AuthFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
-    if (mode === "signup") {
-      if (password !== confirmPassword) {
-        setError("Passwords do not match.");
-        setLoading(false);
-        return;
-      }
+    // Client-side checks before hitting the API
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+    if (mode === "signup" && password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
 
+    setLoading(true);
+
+    if (mode === "signup") {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -76,28 +116,25 @@ export function AuthForm({ mode }: AuthFormProps) {
           setRateLimitSeconds(seconds);
           setError(`Too many attempts — please wait ${seconds}s before trying again.`);
         } else {
-          setError(error.message);
+          setError(friendlyError(error.message));
         }
         setLoading(false);
         return;
       }
 
       if (data.session) {
-        // Email confirmation is disabled in Supabase — user is immediately active
+        // Email confirmation disabled — user is immediately active
         router.push("/onboarding/profile");
       } else {
-        // Email confirmation is required — show check-your-email screen
+        // Email confirmation required — show check-your-email screen
         setConfirmationSent(true);
+        setLoading(false);
       }
 
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        setError(
-          error.message === "Email not confirmed"
-            ? "Please confirm your email first. Check your inbox for a confirmation link."
-            : error.message
-        );
+        setError(friendlyError(error.message));
         setLoading(false);
         return;
       }
@@ -110,10 +147,11 @@ export function AuthForm({ mode }: AuthFormProps) {
           .eq("user_id", user.id)
           .single();
         router.push(onboarding?.completed_at ? "/dashboard" : "/onboarding/profile");
+      } else {
+        setError("Sign in succeeded but we couldn't load your account. Please try again.");
+        setLoading(false);
       }
     }
-
-    setLoading(false);
   };
 
   // ── Check-your-email screen ──────────────────────────────────────────────
@@ -168,11 +206,18 @@ export function AuthForm({ mode }: AuthFormProps) {
               <div>
                 <label className="block text-xs text-text-secondary mb-2 uppercase tracking-wider">Email</label>
                 <input
-                  type="email" required value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)}
+                  type="email" required value={forgotEmail} onChange={(e) => { setForgotEmail(e.target.value); setForgotError(""); }}
                   placeholder="you@example.com"
-                  className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-text-primary placeholder-text-muted text-sm focus:outline-none focus:border-lime/50 transition-all"
+                  className={`w-full bg-surface border rounded-xl px-4 py-3 text-text-primary placeholder-text-muted text-sm focus:outline-none transition-all ${
+                    forgotError ? "border-red-500/50 focus:border-red-500" : "border-border focus:border-lime/50"
+                  }`}
                 />
               </div>
+              {forgotError && (
+                <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-lg px-4 py-2">
+                  {forgotError}
+                </p>
+              )}
               <button type="submit" disabled={forgotLoading}
                 className="w-full bg-lime text-canvas font-display font-bold py-3.5 rounded-xl text-sm uppercase tracking-wider hover:bg-lime-glow transition-all shadow-lime-sm disabled:opacity-50 flex items-center justify-center gap-2">
                 {forgotLoading ? <><ForageSpinner size={16} onLight />Sending…</> : "Send Reset Link"}
@@ -199,18 +244,20 @@ export function AuthForm({ mode }: AuthFormProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Email */}
         <div>
           <label className="block text-xs text-text-secondary mb-2 uppercase tracking-wider">Email</label>
           <input
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => { setEmail(e.target.value); setError(""); }}
             required
             placeholder="you@example.com"
             className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-text-primary placeholder-text-muted text-sm focus:outline-none focus:border-lime/50 focus:shadow-lime-sm transition-all"
           />
         </div>
 
+        {/* Password */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="block text-xs text-text-secondary uppercase tracking-wider">Password</label>
@@ -224,33 +271,46 @@ export function AuthForm({ mode }: AuthFormProps) {
               </button>
             )}
           </div>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            placeholder="••••••••"
-            minLength={6}
-            className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-text-primary placeholder-text-muted text-sm focus:outline-none focus:border-lime/50 focus:shadow-lime-sm transition-all"
-          />
-        </div>
-
-        {mode === "signup" && (
-          <div>
-            <label className="block text-xs text-text-secondary mb-2 uppercase tracking-wider">Confirm Password</label>
+          <div className="relative">
             <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setError(""); }}
               required
               placeholder="••••••••"
               minLength={6}
-              className={`w-full bg-surface border rounded-xl px-4 py-3 text-text-primary placeholder-text-muted text-sm focus:outline-none transition-all ${
-                confirmPassword && confirmPassword !== password
-                  ? "border-red-500/50 focus:border-red-500"
-                  : "border-border focus:border-lime/50 focus:shadow-lime-sm"
-              }`}
+              className="w-full bg-surface border border-border rounded-xl px-4 py-3 pr-11 text-text-primary placeholder-text-muted text-sm focus:outline-none focus:border-lime/50 focus:shadow-lime-sm transition-all"
             />
+            <button type="button" tabIndex={-1} onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors p-1">
+              <EyeIcon open={showPassword} />
+            </button>
+          </div>
+        </div>
+
+        {/* Confirm Password (sign-up only) */}
+        {mode === "signup" && (
+          <div>
+            <label className="block text-xs text-text-secondary mb-2 uppercase tracking-wider">Confirm Password</label>
+            <div className="relative">
+              <input
+                type={showConfirm ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => { setConfirmPassword(e.target.value); setError(""); }}
+                required
+                placeholder="••••••••"
+                minLength={6}
+                className={`w-full bg-surface border rounded-xl px-4 py-3 pr-11 text-text-primary placeholder-text-muted text-sm focus:outline-none transition-all ${
+                  confirmPassword && confirmPassword !== password
+                    ? "border-red-500/50 focus:border-red-500"
+                    : "border-border focus:border-lime/50 focus:shadow-lime-sm"
+                }`}
+              />
+              <button type="button" tabIndex={-1} onClick={() => setShowConfirm((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors p-1">
+                <EyeIcon open={showConfirm} />
+              </button>
+            </div>
             {confirmPassword && confirmPassword !== password && (
               <p className="text-red-400 text-xs mt-1.5">Passwords do not match</p>
             )}
@@ -279,6 +339,20 @@ export function AuthForm({ mode }: AuthFormProps) {
         </button>
       </form>
     </div>
+  );
+}
+
+function EyeIcon({ open }: { open: boolean }) {
+  return open ? (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  ) : (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
   );
 }
 
