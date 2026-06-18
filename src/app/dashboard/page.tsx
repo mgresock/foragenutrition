@@ -146,11 +146,11 @@ export default function DashboardPage() {
       const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       const [{ data: logsData }, { data: profileData }, { data: onboardingData }, { data: recentLogs }, { data: streakLogs }, { data: tierData }] = await Promise.all([
-        supabase.from("meal_logs").select("id, name, calories, protein_g, carbs_g, fat_g, logged_at, nutrition_meta").eq("user_id", user.id).gte("logged_at", todayStart.toISOString()).lte("logged_at", todayEnd.toISOString()).order("logged_at", { ascending: false }),
+        supabase.from("meal_logs").select("id, name, calories, protein_g, carbs_g, fat_g, logged_at, nutrition_meta").eq("user_id", user.id).gte("logged_at", todayStart.toISOString()).lte("logged_at", todayEnd.toISOString()).order("logged_at", { ascending: false }).limit(100),
         supabase.from("profiles").select("display_name, avatar_url").eq("id", user.id).single(),
         supabase.from("onboarding").select("goals, meals_per_week").eq("user_id", user.id).single(),
-        supabase.from("meal_logs").select("name, calories, protein_g, carbs_g, fat_g, logged_at").eq("user_id", user.id).gte("logged_at", sevenDaysAgo.toISOString()).order("logged_at", { ascending: false }),
-        supabase.from("meal_logs").select("logged_at").eq("user_id", user.id).gte("logged_at", thirtyDaysAgo.toISOString()),
+        supabase.from("meal_logs").select("name, calories, protein_g, carbs_g, fat_g, logged_at").eq("user_id", user.id).gte("logged_at", sevenDaysAgo.toISOString()).order("logged_at", { ascending: false }).limit(300),
+        supabase.from("meal_logs").select("logged_at").eq("user_id", user.id).gte("logged_at", thirtyDaysAgo.toISOString()).order("logged_at", { ascending: false }).limit(500),
         supabase.from("profiles").select("subscription_tier, ai_requests_month").eq("id", user.id).single(),
       ]);
 
@@ -189,7 +189,8 @@ export default function DashboardPage() {
         .select("ml")
         .eq("user_id", user.id)
         .gte("logged_at", todayStart.toISOString())
-        .lte("logged_at", todayEnd.toISOString());
+        .lte("logged_at", todayEnd.toISOString())
+        .limit(100);
       if (waterData) setWaterMl(waterData.reduce((s, r) => s + r.ml, 0));
 
       // Active supplements
@@ -198,7 +199,8 @@ export default function DashboardPage() {
         .select("id, name, dose, timing, active")
         .eq("user_id", user.id)
         .eq("active", true)
-        .order("created_at");
+        .order("created_at")
+        .limit(100);
       if (suppData) setSupplements(suppData);
 
       if (recentLogs && recentLogs.length > 0) {

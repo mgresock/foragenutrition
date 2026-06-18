@@ -31,7 +31,8 @@ export async function POST(req: NextRequest) {
         .select("name, calories, protein_g, carbs_g, fat_g, logged_at, nutrition_meta")
         .eq("user_id", user.id)
         .gte("logged_at", sevenDaysAgo.toISOString())
-        .order("logged_at", { ascending: false }),
+        .order("logged_at", { ascending: false })
+        .limit(300),
       supabase
         .from("profiles")
         .select("goal, weight_kg, age, biological_sex")

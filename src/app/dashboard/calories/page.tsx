@@ -634,7 +634,7 @@ export default function CaloriesPage() {
       .select("id, name, calories, protein_g, carbs_g, fat_g, logged_at, source, nutrition_meta")
       .eq("user_id", user.id)
       .gte("logged_at", dayStart.toISOString()).lte("logged_at", dayEnd.toISOString())
-      .order("logged_at", { ascending: false });
+      .order("logged_at", { ascending: false }).limit(100);
     if (data) setLogs(data);
   };
 
@@ -731,9 +731,9 @@ export default function CaloriesPage() {
     if (!user) { setSaving(false); return; }
     const dayStart = new Date(selectedDate); dayStart.setHours(0,0,0,0);
     const dayEnd = new Date(selectedDate); dayEnd.setHours(23,59,59,999);
-    const { data } = await supabase.from("meal_logs").select("*").eq("user_id", user.id)
+    const { data } = await supabase.from("meal_logs").select("id").eq("user_id", user.id)
       .gte("logged_at", dayStart.toISOString()).lte("logged_at", dayEnd.toISOString())
-      .order("logged_at", { ascending: false });
+      .order("logged_at", { ascending: false }).limit(1);
     if (data?.[0]) setSavedId(data[0].id);
     setSaving(false);
     setActiveTab("log");

@@ -47,7 +47,8 @@ export async function GET() {
     .select("user_id, calories, protein_g, carbs_g, fat_g, nutrition_meta")
     .in("user_id", friendIds)
     .gte("logged_at", `${today}T00:00:00`)
-    .lte("logged_at", `${today}T23:59:59`);
+    .lte("logged_at", `${today}T23:59:59`)
+    .limit(1000);
 
   // Fetch streaks (last 30 days)
   const thirtyDaysAgo = new Date();
@@ -56,7 +57,8 @@ export async function GET() {
     .from("meal_logs")
     .select("user_id, logged_at")
     .in("user_id", friendIds)
-    .gte("logged_at", thirtyDaysAgo.toISOString());
+    .gte("logged_at", thirtyDaysAgo.toISOString())
+    .limit(3000);
 
   function computeStreak(logs: { logged_at: string }[]) {
     const dates = [...new Set(logs.map((l) => l.logged_at.split("T")[0]))].sort((a, b) => b.localeCompare(a));

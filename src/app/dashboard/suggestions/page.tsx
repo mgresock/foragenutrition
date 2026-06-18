@@ -81,7 +81,8 @@ export default function SuggestionsPage() {
       supabase.from("meal_logs").select("name, calories, protein_g, carbs_g, fat_g, logged_at")
         .eq("user_id", user.id)
         .gte("logged_at", sevenDaysAgo.toISOString())
-        .order("logged_at", { ascending: false }),
+        .order("logged_at", { ascending: false })
+        .limit(300),
       supabase.from("profiles").select("goals, meals_per_week, weekly_budget, weight_kg").eq("id", user.id).single(),
     ]);
 

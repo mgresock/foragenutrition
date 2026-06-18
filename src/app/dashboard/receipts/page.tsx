@@ -30,7 +30,7 @@ export default function ReceiptsPage() {
     setUserEmail(user.email ?? "");
     const { data: profile } = await supabase.from("profiles").select("subscription_tier").eq("id", user.id).single();
     setUserTier((profile?.subscription_tier as "free" | "pro") ?? "free");
-    const { data } = await supabase.from("receipts").select("*").eq("user_id", user.id).order("scanned_at", { ascending: false });
+    const { data } = await supabase.from("receipts").select("*").eq("user_id", user.id).order("scanned_at", { ascending: false }).limit(100);
     if (data) { setReceipts(data); if (data.length > 0 && !selected) loadReceiptWithItems(data[0]); }
   };
 

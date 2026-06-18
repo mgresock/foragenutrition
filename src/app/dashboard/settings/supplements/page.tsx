@@ -68,7 +68,8 @@ export default function SupplementsPage() {
         .from("supplements")
         .select("id, name, dose, frequency, timing, active")
         .eq("user_id", user.id)
-        .order("created_at");
+        .order("created_at")
+        .limit(200);
       if (data) setSupplements(data);
       setLoading(false);
     };

@@ -350,6 +350,12 @@ Always use `process.env.NEXT_PUBLIC_SITE_URL` — never `req.headers.get("origin
 - `e2e/auth.spec.ts` covers auth-page render, sign-up toggle, and password-mismatch validation (no credentials needed). A real-login test runs only when `E2E_TEST_EMAIL` + `E2E_TEST_PASSWORD` are set (dedicated confirmed test account — never a real user), otherwise skips.
 - Adding Playwright does NOT affect the Next.js build/runtime — `e2e/` and the config are test-only.
 
+## Query Performance
+- **Indexes live in `db/performance-indexes.sql`** — run in Supabase SQL Editor. Postgres does NOT auto-index foreign keys, so every per-user query needs them. Key one: `meal_logs (user_id, logged_at desc)` covers today's log, 7/30-day analytics, friend progress, and AI insights.
+- **Every list query uses WHERE + LIMIT, no pagination.** Per-user queries filter `user_id` (+ usually a `logged_at` range) and cap rows: day views `.limit(100)`, 7-day analytics `.limit(300)`, 30-day streak `.limit(500)`, friend aggregates `.limit(1000-3000)`. Add a `.limit()` to any new list query.
+- All data fetching is `async/await` (often batched in `Promise.all`) — never block on sync work. `switchToLog` selects only `id` + `.limit(1)` for the just-saved highlight.
+- RLS hardening SQL: `db/security-hardening.sql`.
+
 ## Rate Limiting
 - `src/lib/ratelimit.ts` — Upstash Redis-backed sliding-window limiters: `pageLimiter` (60 req/10s per IP) and `apiLimiter` (20 req/10s per IP). Both `null` if `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` unset.
 - **Rate limiting is INACTIVE until Upstash env vars are set** — without them the limiters no-op (fail-open). Must add `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` to `.env.local` and Vercel for it to actually throttle.
