@@ -53,7 +53,7 @@ export default function BudgetPage() {
           </div>
           <div className="relative">
             <input type="range" min={10} max={500} step={5} value={budget} onChange={(e) => setBudget(Number(e.target.value))} className="w-full"
-              style={{ background: `linear-gradient(to right, #b6f040 0%, #b6f040 ${((budget - 10) / 490) * 100}%, #2a3020 ${((budget - 10) / 490) * 100}%, #2a3020 100%)` }} />
+              style={{ background: `linear-gradient(to right, #34C759 0%, #34C759 ${((budget - 10) / 490) * 100}%, #2C2C2E ${((budget - 10) / 490) * 100}%, #2C2C2E 100%)` }} />
             <div className="flex justify-between mt-1">
               <span className="text-text-muted text-xs font-mono">$10</span>
               <span className="text-text-muted text-xs font-mono">$500+</span>

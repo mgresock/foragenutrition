@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Hunt smart. Eat better. AI-powered nutrition and grocery savings.",
     start_url: "/dashboard",
     display: "standalone",
-    background_color: "#0c0e09",
-    theme_color: "#0c0e09",
+    background_color: "#000000",
+    theme_color: "#000000",
     orientation: "portrait",
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
