@@ -33,7 +33,7 @@ export async function GET() {
   const [{ data: profiles }, { data: onboardings }] = await Promise.all([
     adminSupabase
       .from("profiles")
-      .select("id, display_name, avatar_url, weekly_budget")
+      .select("id, display_name, avatar_url")
       .in("id", friendIds),
     adminSupabase
       .from("onboarding")

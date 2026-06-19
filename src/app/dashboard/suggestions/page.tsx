@@ -83,14 +83,13 @@ export default function SuggestionsPage() {
         .gte("logged_at", sevenDaysAgo.toISOString())
         .order("logged_at", { ascending: false })
         .limit(300),
-      supabase.from("profiles").select("goals, meals_per_week, weekly_budget, weight_kg").eq("id", user.id).single(),
+      // Body stats / prefs live on `onboarding`, not `profiles`.
+      supabase.from("onboarding").select("goals, meals_per_week, weekly_budget, weight_kg").eq("user_id", user.id).single(),
     ]);
-
-    const onboarding = await supabase.from("onboarding").select("goals").eq("user_id", user.id).single();
 
     const profileData = {
       ...profile,
-      goals: onboarding.data?.goals ?? profile?.goals ?? [],
+      goals: profile?.goals ?? [],
     };
 
     try {

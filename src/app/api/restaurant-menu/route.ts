@@ -134,13 +134,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Fetch authoritative profile from DB
-    const [{ data: profileData }, { data: obData }] = await Promise.all([
-      supabase.from("profiles").select("weight_kg").eq("id", user.id).single(),
-      supabase.from("onboarding").select("goals").eq("user_id", user.id).single(),
-    ]);
+    // Fetch authoritative profile from DB — body stats live on `onboarding`, not `profiles`.
+    const { data: obData } = await supabase
+      .from("onboarding")
+      .select("goals, weight_kg")
+      .eq("user_id", user.id)
+      .single();
     const goals: string[] = obData?.goals ?? [];
-    const weight_kg: number | undefined = profileData?.weight_kg ?? undefined;
+    const weight_kg: number | undefined = obData?.weight_kg ?? undefined;
 
     const budgetNote = budget ? `Budget: $${budget} for the meal.` : "No budget constraint — recommend the best options regardless of price.";
     const goalNote = goals?.length ? `User goals: ${goals.join(", ")}.` : "Focus on high protein and low calorie density.";

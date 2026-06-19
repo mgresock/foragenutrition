@@ -34,9 +34,9 @@ export async function POST(req: NextRequest) {
         .order("logged_at", { ascending: false })
         .limit(300),
       supabase
-        .from("profiles")
-        .select("goal, weight_kg, age, biological_sex")
-        .eq("id", user.id)
+        .from("onboarding")
+        .select("goals, weight_kg, age, sex")
+        .eq("user_id", user.id)
         .single(),
     ]);
 

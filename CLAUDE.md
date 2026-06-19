@@ -53,7 +53,7 @@ Loaded via Google Fonts link in `src/app/layout.tsx`.
 - `stripe_subscription_id` (text, nullable)
 - `ai_requests_month` (integer, default 0) — resets each calendar month
 - `ai_requests_reset_at` (timestamptz) — date of last reset
-- ⚠️ **Body stats / prefs are NOT on `profiles` — they live on `onboarding`**: `age, sex, height_cm, weight_kg, unit_pref, goals, meals_per_week, zip_code, weekly_budget` (keyed by `user_id`). Several API routes still `select` these from `profiles` (e.g. grocery-ai, restaurant-menu, daily-suggestions) and get null/error back — latent bug; those reads should target `onboarding`.
+- ⚠️ **Body stats / prefs are NOT on `profiles` — they live on `onboarding`**: `age, sex, height_cm, weight_kg, unit_pref, goals, meals_per_week, zip_code, weekly_budget` (keyed by `user_id`). Field names: `sex` (not `biological_sex`), `goals` (not `goal`). All reads now target `onboarding` (fixed across grocery-ai, restaurant-menu, daily-suggestions, nutrition-insights, friends/progress, and the grocery/restaurants/suggestions pages). When adding a profile read, only `id, display_name, avatar_url, created_at, friend_code, subscription_tier, stripe_*, ai_requests_*` are on `profiles`.
 
 ### `meal_logs`
 - `id`, `user_id`, `logged_at`

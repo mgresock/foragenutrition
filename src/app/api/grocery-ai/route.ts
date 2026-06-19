@@ -100,12 +100,14 @@ export async function POST(req: NextRequest) {
           .filter(Boolean)
       : [];
 
-    // Fetch authoritative profile from DB — never trust client-supplied profile data
-    const [{ data: profileData }, { data: obData }] = await Promise.all([
-      supabase.from("profiles").select("zip_code, weekly_budget, weight_kg").eq("id", user.id).single(),
-      supabase.from("onboarding").select("goals, meals_per_week").eq("user_id", user.id).single(),
-    ]);
-    const userProfile = { ...profileData, ...obData };
+    // Fetch authoritative profile from DB — never trust client-supplied profile data.
+    // Body stats / prefs live on `onboarding` (NOT `profiles`), keyed by user_id.
+    const { data: obData } = await supabase
+      .from("onboarding")
+      .select("goals, meals_per_week, zip_code, weekly_budget, weight_kg")
+      .eq("user_id", user.id)
+      .single();
+    const userProfile = { ...obData };
 
     if (action === "generate") {
       const budget = userProfile?.weekly_budget ? `$${userProfile.weekly_budget}` : "no strict budget";

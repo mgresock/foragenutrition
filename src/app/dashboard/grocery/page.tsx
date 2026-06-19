@@ -118,11 +118,9 @@ export default function GroceryPage() {
   const loadZip = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const [{ data: profileData }, { data: ob }] = await Promise.all([
-      supabase.from("profiles").select("zip_code").eq("id", user.id).single(),
-      supabase.from("onboarding").select("zip_code").eq("user_id", user.id).single(),
-    ]);
-    const zip = profileData?.zip_code || ob?.zip_code;
+    const { data: ob } = await supabase
+      .from("onboarding").select("zip_code").eq("user_id", user.id).single();
+    const zip = ob?.zip_code;
     if (zip) setZipCode(zip);
   };
 
@@ -265,11 +263,12 @@ export default function GroceryPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setGenerating(false); return; }
 
-    const [{ data: onboardingRaw }, { data: profileRaw }] = await Promise.all([
-      supabase.from("onboarding").select("goals, meals_per_week").eq("user_id", user.id).single(),
-      supabase.from("profiles").select("zip_code, weekly_budget, weight_kg").eq("id", user.id).single(),
-    ]);
-    const onboarding = { ...onboardingRaw, ...profileRaw };
+    const { data: onboardingRaw } = await supabase
+      .from("onboarding")
+      .select("goals, meals_per_week, zip_code, weekly_budget, weight_kg")
+      .eq("user_id", user.id)
+      .single();
+    const onboarding = { ...onboardingRaw };
 
     const res = await fetch("/api/grocery-ai", {
       method: "POST",
@@ -307,7 +306,7 @@ export default function GroceryPage() {
       setFilter("All");
       setMealPlanOpen(true);
       const storeNote = selectedStores.length > 0 ? ` across ${selectedStores.join(", ")}` : "";
-      const budget = profileRaw?.weekly_budget ? ` under your $${profileRaw.weekly_budget} budget` : "";
+      const budget = onboarding?.weekly_budget ? ` under your $${onboarding.weekly_budget} budget` : "";
       setChatMessages([{ role: "ai", text: `Done! ${aiItems.length}-item list built${storeNote}${budget}. Your 7-day meal plan is above. Want me to swap anything or adjust for your goals?` }]);
 
       // Try to persist to DB in the background (tables may not exist yet)
@@ -377,11 +376,12 @@ export default function GroceryPage() {
     const { data: { user } } = await supabase.auth.getUser();
     let onboarding = null;
     if (user) {
-      const [{ data: ob }, { data: pr }] = await Promise.all([
-        supabase.from("onboarding").select("goals, meals_per_week").eq("user_id", user.id).single(),
-        supabase.from("profiles").select("zip_code, weekly_budget").eq("id", user.id).single(),
-      ]);
-      onboarding = { ...ob, ...pr };
+      const { data: ob } = await supabase
+        .from("onboarding")
+        .select("goals, meals_per_week, zip_code, weekly_budget")
+        .eq("user_id", user.id)
+        .single();
+      onboarding = { ...ob };
     }
 
     const res = await fetch("/api/grocery-ai", {

@@ -231,13 +231,13 @@ export default function RestaurantsPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const [{ data: ob }, { data: pr }] = await Promise.all([
-        supabase.from("onboarding").select("goals, zip_code").eq("user_id", user.id).single(),
-        supabase.from("profiles").select("weight_kg, zip_code, subscription_tier").eq("id", user.id).single(),
+        supabase.from("onboarding").select("goals, zip_code, weight_kg").eq("user_id", user.id).single(),
+        supabase.from("profiles").select("subscription_tier").eq("id", user.id).single(),
       ]);
       if (ob?.goals) setGoals(ob.goals);
-      if (pr?.weight_kg) setWeightKg(pr.weight_kg);
+      if (ob?.weight_kg) setWeightKg(ob.weight_kg);
       setUserTier((pr?.subscription_tier as "free" | "pro") ?? "free");
-      const zip = pr?.zip_code || ob?.zip_code;
+      const zip = ob?.zip_code;
       // Only pre-fill the ZIP — user must press Find to load results
       if (zip) setDiscoverZip(zip);
     };
