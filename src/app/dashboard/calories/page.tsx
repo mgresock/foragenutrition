@@ -852,8 +852,9 @@ export default function CaloriesPage() {
   return (
     <div className="px-6 py-8 pb-24 lg:pb-8 max-w-3xl">
       <div className="mb-8">
-        <h1 className="font-display font-black text-3xl text-text-primary">Calorie Tracker</h1>
-        <p className="text-text-secondary mt-1">Log meals manually or let AI identify your food.</p>
+        <p className="text-lime text-xs font-mono uppercase tracking-[0.2em] mb-1.5">Intake · Log</p>
+        <h1 className="font-display font-black text-4xl uppercase tracking-tight leading-[0.95] text-text-primary">Calorie Tracker</h1>
+        <p className="text-text-secondary mt-2">Log meals manually or let AI identify your food.</p>
       </div>
 
       {/* Date navigation */}

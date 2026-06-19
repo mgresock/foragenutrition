@@ -314,8 +314,8 @@ export default function DashboardPage() {
       {/* ── Header — full width ── */}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <p className="text-text-muted text-xs font-mono uppercase tracking-widest">{today}</p>
-          <h1 className="font-display font-black text-3xl sm:text-4xl text-text-primary mt-1">{greeting}, {firstName}.</h1>
+          <p className="text-lime text-xs font-mono uppercase tracking-[0.2em]">{today}</p>
+          <h1 className="font-display font-black text-4xl sm:text-5xl uppercase tracking-tight leading-[0.95] text-text-primary mt-1.5">{greeting}, {firstName}.</h1>
           <p className="text-text-secondary text-sm mt-1">
             {remaining > 0 ? `${remaining.toLocaleString()} kcal left to hit your target.` : "Calorie goal crushed. Recovery mode."}
           </p>

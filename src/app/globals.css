@@ -1,11 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --font-display: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+  --font-display: 'Archivo', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
   --font-body:    -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
   --font-mono:    'DM Mono', ui-monospace, 'Courier New', monospace;
   --sat: env(safe-area-inset-top, 0px);
@@ -31,12 +31,19 @@ body {
   overflow-x: hidden;
   height: 100%;
   background-color: #000000;
+  /* Signature tactical top-right green glow — sits behind all content */
+  background-image: radial-gradient(60vw 55vh at 100% 0%, rgba(52, 199, 89, 0.10), transparent 68%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: #F2F2F7;
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   padding-top: var(--sat);
 }
+
+/* Tactical display headings — heavier, tighter, like the reference */
+h1.font-display, h2.font-display { letter-spacing: -0.02em; }
 
 /* ── Scrollbar ────────────────────────────────────────────── */
 ::-webkit-scrollbar              { width: 4px; height: 4px; }

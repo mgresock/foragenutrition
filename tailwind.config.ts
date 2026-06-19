@@ -34,7 +34,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ["-apple-system", "BlinkMacSystemFont", "Inter", "Segoe UI", "sans-serif"],
+        display: ["Archivo", "-apple-system", "BlinkMacSystemFont", "Inter", "Segoe UI", "sans-serif"],
         body:    ["-apple-system", "BlinkMacSystemFont", "Inter", "Segoe UI", "sans-serif"],
         mono:    ["DM Mono", "ui-monospace", "monospace"],
       },

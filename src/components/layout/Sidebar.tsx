@@ -163,12 +163,16 @@ export function Sidebar({ initialProfile = null }: { initialProfile?: SidebarPro
     <>
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex fixed left-0 top-0 h-full w-60 bg-surface border-r border-border flex-col z-40 select-none">
-        <div className="px-5 py-5 border-b border-border">
+        <div className="px-5 py-5 border-b border-border flex items-center justify-between">
           <ForageLogo size={24} />
+          <span className="flex items-center gap-1.5 text-[10px] font-mono font-semibold uppercase tracking-[0.2em] text-lime">
+            <span className="w-1.5 h-1.5 rounded-full bg-lime animate-pulse" />
+            Live
+          </span>
         </div>
 
         <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-          {ALL_NAV.filter((item) => item.href !== "/dashboard/social").map((item) => {
+          {ALL_NAV.filter((item) => item.href !== "/dashboard/social").map((item, i) => {
             const active = isActive(item.href);
             return (
               <Link key={item.href} href={item.href}
@@ -186,6 +190,9 @@ export function Sidebar({ initialProfile = null }: { initialProfile?: SidebarPro
                     {item.badge}
                   </span>
                 )}
+                <span className={`font-mono text-[10px] tabular-nums flex-shrink-0 ${active ? "text-lime/70" : "text-text-muted"}`}>
+                  {String(i + 1).padStart(2, "0")}
+                </span>
               </Link>
             );
           })}
@@ -204,7 +211,8 @@ export function Sidebar({ initialProfile = null }: { initialProfile?: SidebarPro
                 <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
             </span>
-            <span className="font-medium">Settings</span>
+            <span className="font-medium flex-1">Settings</span>
+            <span className={`font-mono text-[10px] tabular-nums flex-shrink-0 ${isActive("/dashboard/settings") ? "text-lime/70" : "text-text-muted"}`}>07</span>
           </Link>
           <Link href="/dashboard/social" className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${
             isActive("/dashboard/social")
