@@ -29,21 +29,33 @@ create policy "Users read own profile"
 
 -- ── 2. Block billing / quota tampering (column-level privileges) ─────────────
 -- RLS row policies don't restrict WHICH columns a user updates. Postgres column
--- privileges do. We revoke blanket UPDATE, then grant UPDATE back on ONLY the
--- safe, user-editable columns. subscription_tier / ai_requests_* / stripe_* /
--- friend_code are intentionally NOT granted → the browser can't write them.
+-- privileges do. We revoke blanket UPDATE, then grant UPDATE back on every
+-- column EXCEPT the protected billing/quota ones — discovered dynamically from
+-- the live schema so this works no matter which profile columns you actually
+-- have. The protected columns are never granted → the browser can't write them.
 -- (Service-role code — webhook, subscription.ts, checkout — bypasses this.)
-revoke update on public.profiles from anon, authenticated;
+do $$
+declare safe_cols text;
+begin
+  select string_agg(format('%I', column_name), ', ')
+  into safe_cols
+  from information_schema.columns
+  where table_schema = 'public'
+    and table_name = 'profiles'
+    and column_name not in (
+      'id',
+      'created_at',
+      'subscription_tier',
+      'ai_requests_month',
+      'ai_requests_reset_at',
+      'stripe_customer_id',
+      'stripe_subscription_id',
+      'friend_code'
+    );
 
-grant update (
-  display_name, avatar_url, age, height_cm, weight_kg,
-  biological_sex, goal, meals_per_week, zip_code, weekly_budget
-) on public.profiles to authenticated;
-
--- NOTE: adjust the column list above if your profiles schema differs. List your
--- actual columns with:
---   select column_name from information_schema.columns
---   where table_schema = 'public' and table_name = 'profiles' order by 1;
+  execute 'revoke update on public.profiles from anon, authenticated';
+  execute format('grant update (%s) on public.profiles to authenticated', safe_cols);
+end $$;
 
 -- ── 3. Verify ────────────────────────────────────────────────────────────────
 -- After running, check the policy + grants:
