@@ -107,7 +107,7 @@ Estimate the nutritional content and call log_nutrition with the values. Use typ
     const mediaType = file.type as "image/jpeg" | "image/png" | "image/webp" | "image/gif";
 
     const response = await client.messages.create({
-      model: "claude-opus-4-7",
+      model: "claude-opus-4-8",
       max_tokens: 1024,
       system: "You are a nutrition database. Always call the log_nutrition tool with precise numerical values. Never refuse.",
       tools: [NUTRITION_TOOL],

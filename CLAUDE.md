@@ -9,7 +9,7 @@ When this conversation is compacted, **always update this CLAUDE.md file first**
 ## Tech Stack
 - **Next.js 15** — App Router, TypeScript, `"use client"` where needed
 - **Supabase** — PostgreSQL, Row Level Security (RLS), Auth (Google OAuth + email/password), Storage (avatars, food-photos)
-- **Anthropic Claude API** — `claude-haiku-4-5-20251001` for all AI features (text, brand, grocery, restaurant, insights)
+- **Anthropic Claude API** — `claude-haiku-4-5-20251001` for text features; `claude-opus-4-8` for vision (image food analysis, receipt scan)
 - **OpenStreetMap Overpass API** — free, no-key local store + restaurant discovery by lat/lng radius (5 mirror endpoints tried in parallel via `Promise.any()`)
 - **Nominatim geocoding** — free ZIP → lat/lng (requires User-Agent header)
 - **Resend** — transactional email (password reset). `RESEND_API_KEY` env var.
@@ -171,7 +171,8 @@ Each settings page splits into two files:
 **Rule:** Initial reads → server-side. Write/save operations → client-side Supabase (user-triggered, acceptable). Never trust client-supplied profile/goals/weight data in AI routes — always fetch from DB server-side.
 
 ## AI Configuration
-- **All AI features**: `claude-haiku-4-5-20251001` — fast and accurate for all use cases
+- **Text / structured features** (analyze-food describe+brand, grocery, restaurant, insights, daily-suggestions): `claude-haiku-4-5-20251001` — fast and accurate, keeps per-call cost low
+- **Vision features** (analyze-food image mode, scan-receipt): `claude-opus-4-8` — latest Opus, strongest image understanding
 - **Do NOT use `temperature: 0`** — can cause API errors; use `tool_use` for consistency instead
 - **Always use tool_use** (`tool_choice: { type: "any" }` or `{ type: "tool", name: "..." }`) for structured data
 - Food analysis returns: `{ name, calories, protein, carbs, fat, fiber, sugar, saturated_fat, sodium, protein_quality, carb_type, confidence, notes, vitamin_c_mg, vitamin_d_mcg, vitamin_b12_mcg, calcium_mg, iron_mg, potassium_mg, magnesium_mg }`
