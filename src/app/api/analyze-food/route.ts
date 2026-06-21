@@ -15,10 +15,26 @@ const NUTRITION_TOOL: Anthropic.Tool = {
     type: "object" as const,
     properties: {
       name:           { type: "string",  description: "Descriptive name of the food or meal" },
-      calories:       { type: "integer", description: "Total calories (kcal)" },
-      protein:        { type: "number",  description: "Protein in grams" },
-      carbs:          { type: "number",  description: "Total carbohydrates in grams" },
-      fat:            { type: "number",  description: "Total fat in grams" },
+      items: {
+        type: "array",
+        description: "REQUIRED. Break the meal into each distinct component (every food, plus cooking oils/sauces/dressings). Estimate each component's portion and macros SEPARATELY using standard nutrition data — the meal totals MUST equal the sum of these items. This itemized approach is far more accurate than guessing a single total.",
+        items: {
+          type: "object",
+          properties: {
+            name:     { type: "string",  description: "Component name, e.g. 'Grilled chicken breast'" },
+            portion:  { type: "string",  description: "Estimated portion with a weight, e.g. '6 oz (~170g)', '1 cup (~150g)', '1 tbsp (~14g)'" },
+            calories: { type: "integer" },
+            protein:  { type: "number" },
+            carbs:    { type: "number" },
+            fat:      { type: "number" },
+          },
+          required: ["name", "portion", "calories", "protein", "carbs", "fat"],
+        },
+      },
+      calories:       { type: "integer", description: "Total calories (kcal) — must equal the sum of items" },
+      protein:        { type: "number",  description: "Protein in grams — sum of items" },
+      carbs:          { type: "number",  description: "Total carbohydrates in grams — sum of items" },
+      fat:            { type: "number",  description: "Total fat in grams — sum of items" },
       fiber:          { type: "number",  description: "Dietary fiber in grams" },
       sugar:          { type: "number",  description: "Total sugar in grams" },
       saturated_fat:  { type: "number",  description: "Saturated fat in grams" },
@@ -35,7 +51,7 @@ const NUTRITION_TOOL: Anthropic.Tool = {
       potassium_mg:   { type: "integer", description: "Potassium in milligrams — estimate from ingredients" },
       magnesium_mg:   { type: "integer", description: "Magnesium in milligrams — estimate from ingredients" },
     },
-    required: ["name", "calories", "protein", "carbs", "fat", "fiber", "sugar", "saturated_fat", "sodium", "protein_quality", "carb_type", "confidence", "notes", "vitamin_c_mg", "vitamin_d_mcg", "vitamin_b12_mcg", "calcium_mg", "iron_mg", "potassium_mg", "magnesium_mg"],
+    required: ["name", "items", "calories", "protein", "carbs", "fat", "fiber", "sugar", "saturated_fat", "sodium", "protein_quality", "carb_type", "confidence", "notes", "vitamin_c_mg", "vitamin_d_mcg", "vitamin_b12_mcg", "calcium_mg", "iron_mg", "potassium_mg", "magnesium_mg"],
   },
 };
 
@@ -43,6 +59,32 @@ function extractToolInput(response: Anthropic.Message): Record<string, unknown> 
   const block = response.content.find((b) => b.type === "tool_use");
   if (!block || block.type !== "tool_use") return null;
   return block.input as Record<string, unknown>;
+}
+
+// Ground the macro totals in the per-item breakdown: recompute calories/protein/
+// carbs/fat as the SUM of the items the model itemized (rather than trusting a
+// holistic guess), and expose the breakdown as `components` for the UI.
+function groundFromItems(input: Record<string, unknown>): Record<string, unknown> {
+  const items = Array.isArray(input.items) ? (input.items as Array<Record<string, unknown>>) : [];
+  if (items.length === 0) return input;
+  const r1 = (n: number) => Math.round(n * 10) / 10;
+  const sum = (k: string) => items.reduce((s, it) => s + (Number(it[k]) || 0), 0);
+  const components = items.map((it) => ({
+    name: String(it.name ?? "").slice(0, 80),
+    amount: String(it.portion ?? "").slice(0, 60),
+    calories: Math.round(Number(it.calories) || 0),
+    protein_g: r1(Number(it.protein) || 0),
+    carbs_g: r1(Number(it.carbs) || 0),
+    fat_g: r1(Number(it.fat) || 0),
+  }));
+  return {
+    ...input,
+    calories: Math.round(sum("calories")),
+    protein: r1(sum("protein")),
+    carbs: r1(sum("carbs")),
+    fat: r1(sum("fat")),
+    components,
+  };
 }
 
 export async function POST(req: NextRequest) {
@@ -69,17 +111,22 @@ export async function POST(req: NextRequest) {
 
       if (brand || product) {
         const servingNote = serving ? ` (serving size: ${serving})` : "";
-        ck = cacheKey("food:brand", `${brand ?? ""}|${product ?? ""}|${serving ?? ""}`);
-        prompt = `Look up the nutrition facts for this branded food item and call log_nutrition with the values:
+        ck = cacheKey("food:brand:v2", `${brand ?? ""}|${product ?? ""}|${serving ?? ""}`);
+        prompt = `Look up the published nutrition label for this branded food item:
 Brand: ${brand || "unknown"}
 Product: ${product || "unknown"}${servingNote}
 
-Use your knowledge of published nutrition labels. If you know the exact facts, use them. If estimating, set confidence to "low".`;
+Call log_nutrition with the values from the official nutrition label for the stated serving. Put the product as a single entry in items. Use exact label values where you know them; if estimating, set confidence to "low".`;
       } else if (description) {
-        ck = cacheKey("food:desc", String(description));
-        prompt = `A user described their meal as: "${description}"
+        ck = cacheKey("food:desc:v2", String(description));
+        prompt = `A user described their meal: "${description}"
 
-Estimate the nutritional content and call log_nutrition with the values. Use typical serving sizes and standard recipes. If multiple items are described, sum all macros into one total. If vague, set confidence to "low".`;
+Estimate its nutrition ACCURATELY by decomposing it:
+1. Break the meal into every distinct component — each food, plus cooking oils, butter, sauces, and dressings (these add significant hidden calories).
+2. For EACH component, estimate the portion with a weight in grams (use the amounts stated; otherwise assume realistic home/restaurant portions — cooked portions are usually LARGER than label single-servings).
+3. Look up each component's macros from standard per-100g nutrition data and scale to the portion.
+4. Put every component in items. The totals must equal the sum of the items.
+Set confidence based on how specific the description was.`;
       } else {
         return NextResponse.json({ error: "No input provided" }, { status: 400 });
       }
@@ -93,15 +140,16 @@ Estimate the nutritional content and call log_nutrition with the values. Use typ
 
       const response = await client.messages.create({
         model: "claude-haiku-4-5-20251001", // text/brand lookups — Haiku is fast and cheap
-        max_tokens: 1024,
-        system: "You are a nutrition database. Always call the log_nutrition tool with precise numerical values. Never refuse.",
+        max_tokens: 2048,
+        system: "You are a precise sports-nutrition estimator. Decompose meals into components, estimate each portion's weight, and derive macros from standard nutrition data. Always call log_nutrition; the totals must equal the sum of the items.",
         tools: [NUTRITION_TOOL],
         tool_choice: { type: "any" },
         messages: [{ role: "user", content: prompt }],
       });
 
-      const input = extractToolInput(response);
-      if (!input) return NextResponse.json({ error: "Analysis failed" }, { status: 500 });
+      const raw = extractToolInput(response);
+      if (!raw) return NextResponse.json({ error: "Analysis failed" }, { status: 500 });
+      const input = groundFromItems(raw);
       await cacheSet(ck, input);
       return NextResponse.json(input);
     }
@@ -121,22 +169,26 @@ Estimate the nutritional content and call log_nutrition with the values. Use typ
 
     const response = await client.messages.create({
       model: "claude-opus-4-8",
-      max_tokens: 1024,
-      system: "You are a nutrition database. Always call the log_nutrition tool with precise numerical values. Never refuse.",
+      max_tokens: 2048,
+      system: "You are a precise sports-nutrition estimator analyzing food photos. Identify every component, estimate portion sizes from visual scale cues, and derive macros from standard nutrition data. Always call log_nutrition; the totals must equal the sum of the items.",
       tools: [NUTRITION_TOOL],
       tool_choice: { type: "any" },
       messages: [{
         role: "user",
         content: [
           { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
-          { type: "text", text: "Analyze this food image and call log_nutrition with the estimated nutritional content. If you cannot identify the food, still call the tool with your best estimate and confidence set to \"low\"." },
+          { type: "text", text: `Estimate this meal's nutrition ACCURATELY by decomposing it:
+1. Identify every distinct food on the plate, plus visible oils, butter, sauces, cheese, and dressings.
+2. Estimate EACH component's portion in grams using visual scale cues — plate/bowl diameter (~26cm dinner plate), fork/spoon size, a deck-of-cards (~85g) for meat, a fist (~150g) for grains/veg, the food's depth and how full the container is.
+3. Derive each component's macros from standard per-100g nutrition data scaled to its portion.
+4. Put every component in items; the totals must equal their sum. If unsure, set confidence to "low" but still give your best itemized estimate.` },
         ],
       }],
     });
 
-    const input = extractToolInput(response);
-    if (!input) return NextResponse.json({ error: "Analysis failed" }, { status: 500 });
-    return NextResponse.json(input);
+    const raw = extractToolInput(response);
+    if (!raw) return NextResponse.json({ error: "Analysis failed" }, { status: 500 });
+    return NextResponse.json(groundFromItems(raw));
 
   } catch (err) {
     console.error("Food analysis error:", err);

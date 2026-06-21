@@ -715,6 +715,8 @@ export default function CaloriesPage() {
       iron_mg: data.iron_mg as number | undefined,
       potassium_mg: data.potassium_mg as number | undefined,
       magnesium_mg: data.magnesium_mg as number | undefined,
+      // Per-component breakdown the estimator itemized — shown as "Meal Parts".
+      components: Array.isArray(data.components) ? (data.components as MealComponent[]) : undefined,
     },
   });
 
