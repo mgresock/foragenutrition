@@ -26,6 +26,18 @@ export async function checkAiAccess(
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
+  // Preferred path: atomic increment via RPC (no read-then-write race under bursts).
+  // Falls back to the manual path below if the function isn't deployed yet.
+  const { data: rpc, error: rpcErr } = await adminSupabase.rpc("increment_ai_usage", {
+    p_user_id: userId,
+    p_month_start: monthStart,
+    p_limit: FREE_MONTHLY_LIMIT,
+  });
+  if (!rpcErr && Array.isArray(rpc) && rpc[0]) {
+    const row = rpc[0] as { allowed: boolean; used: number };
+    return { allowed: row.allowed, tier, remaining: row.allowed ? Math.max(0, FREE_MONTHLY_LIMIT - row.used) : 0 };
+  }
+
   const { data } = await adminSupabase
     .from("profiles")
     .select("ai_requests_month, ai_requests_reset_at")

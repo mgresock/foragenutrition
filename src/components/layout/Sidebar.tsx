@@ -62,6 +62,16 @@ const NAV = [
 
 const SIDEBAR_EXTRA = [
   {
+    href: "/dashboard/macros",
+    label: "Macro Calc",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 20 20">
+        <rect x="4" y="2" width="12" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M7 6h6M7 10h2M11 10h2M7 13h2M11 13h2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     href: "/dashboard/settings/supplements",
     label: "Supplements",
     icon: (
@@ -98,6 +108,16 @@ const SIDEBAR_EXTRA = [
 const ALL_NAV = [...NAV, ...SIDEBAR_EXTRA];
 
 const MORE_NAV = [
+  {
+    href: "/dashboard/macros",
+    label: "Macro Calc",
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 20 20">
+        <rect x="4" y="2" width="12" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M7 6h6M7 10h2M11 10h2M7 13h2M11 13h2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      </svg>
+    ),
+  },
   {
     href: "/dashboard/restaurants",
     label: "Restaurants",

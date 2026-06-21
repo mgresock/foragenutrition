@@ -1,0 +1,5 @@
+{
+  "crons": [
+    { "path": "/api/recompute-targets", "schedule": "0 9 * * 1" }
+  ]
+}

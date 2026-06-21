@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { cacheGet, cacheSet, cacheKey } from "@/lib/cache";
 
 // Food database lookup via Open Food Facts (free, open, 2.5M+ branded products).
 // Two modes: ?q=<text> for a name search, ?barcode=<digits> for a scan lookup.
@@ -90,6 +91,10 @@ export async function GET(req: NextRequest) {
   try {
     // ── Barcode lookup ──
     if (barcode) {
+      const ck = cacheKey("off:barcode", barcode);
+      const cached = await cacheGet<FoodResult>(ck);
+      if (cached) return NextResponse.json({ result: cached, cached: true });
+
       const res = await fetch(
         `https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=${FIELDS}`,
         { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(8000) }
@@ -101,11 +106,16 @@ export async function GET(req: NextRequest) {
       }
       const result = normalize({ code: barcode, ...data.product });
       if (!result) return NextResponse.json({ result: null, error: "no_nutrition" }, { status: 404 });
+      await cacheSet(ck, result);
       return NextResponse.json({ result });
     }
 
     // ── Text search ──
     if (q.length >= 2) {
+      const ck = cacheKey("off:q", q);
+      const cached = await cacheGet<FoodResult[]>(ck);
+      if (cached) return NextResponse.json({ results: cached, cached: true });
+
       const url =
         `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}` +
         `&search_simple=1&action=process&json=1&page_size=24&fields=${FIELDS}`;
@@ -124,6 +134,7 @@ export async function GET(req: NextRequest) {
           return true;
         })
         .slice(0, 20);
+      await cacheSet(ck, results, 60 * 60 * 24 * 7); // searches: 7-day TTL
       return NextResponse.json({ results });
     }
 

@@ -41,7 +41,14 @@ export interface FoodLogEntry {
 
 const r1 = (n: number) => Math.round(n * 10) / 10;
 
-export function FoodSearchTab({ onLog, saving }: { onLog: (e: FoodLogEntry) => void; saving: boolean }) {
+interface RecentFood { name: string; calories: number; protein_g: number; carbs_g: number; fat_g: number }
+
+export function FoodSearchTab({ onLog, saving, recents = [], onRelog }: {
+  onLog: (e: FoodLogEntry) => void;
+  saving: boolean;
+  recents?: RecentFood[];
+  onRelog?: (index: number) => void;
+}) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<FoodResult[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -133,6 +140,22 @@ export function FoodSearchTab({ onLog, saving }: { onLog: (e: FoodLogEntry) => v
         </button>
         <p className="text-text-muted text-[11px] leading-relaxed">Nutrition from Open Food Facts. Per-serving values used when available, otherwise per 100g — adjust the amount below.</p>
       </div>
+
+      {/* Recent foods — one-tap re-log */}
+      {!selected && !results && !scanLookup && recents.length > 0 && onRelog && (
+        <div>
+          <p className="text-text-muted text-[10px] uppercase tracking-widest font-mono mb-2 px-1">Recent · tap to re-log</p>
+          <div className="flex flex-wrap gap-2">
+            {recents.map((r, i) => (
+              <button key={r.name + i} onClick={() => onRelog(i)} disabled={saving}
+                className="flex items-center gap-2 bg-card border border-border rounded-xl px-3 py-2 text-left hover:border-lime/40 hover:bg-lime/5 transition-all disabled:opacity-50">
+                <span className="text-text-primary text-xs font-medium max-w-[160px] truncate">{r.name}</span>
+                <span className="num text-lime text-xs font-display font-bold">{r.calories}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {scanLookup && (
         <div className="flex items-center justify-center gap-2 text-text-secondary text-sm py-4"><ForageSpinner size={18} />Looking up barcode…</div>

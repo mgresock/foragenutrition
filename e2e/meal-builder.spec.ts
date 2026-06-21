@@ -79,3 +79,12 @@ test("food search tab + backdated-logging controls render", async ({ page }) => 
   // Backdating control shows on any non-log tab
   await expect(page.getByText("Logging for")).toBeVisible();
 });
+
+test("macro calculator computes a personalized daily target", async ({ page }) => {
+  await login(page);
+  await page.goto("/dashboard/macros");
+  await expect(page.getByRole("heading", { name: "Macro Calculator" })).toBeVisible();
+  await expect(page.getByText("Daily Target")).toBeVisible();
+  await expect(page.getByText(/kcal/).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /Apply to Profile|Applied/ })).toBeVisible();
+});

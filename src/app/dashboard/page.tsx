@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { getSupplementEffect } from "@/lib/supplementEffects";
+import { computeTargets, goalFromGoals } from "@/lib/nutrition";
 
 const FUN_FACTS = [
   { emoji: "🍌", fact: "Bananas are one of the best sources of potassium, which helps regulate blood pressure and supports muscle contractions during workouts." },
@@ -113,6 +114,7 @@ export default function DashboardPage() {
   const [waterMl, setWaterMl] = useState(0);
   const [customWaterInput, setCustomWaterInput] = useState("");
   const [supplements, setSupplements] = useState<Supplement[]>([]);
+  const [targets, setTargets] = useState<{ calories: number; protein_g: number; carbs_g: number; fat_g: number }>({ calories: CALORIE_GOAL, protein_g: PROTEIN_GOAL, carbs_g: 300, fat_g: 75 });
 
   const fetchInsights = useCallback(async (recentLogs: MealLog[], onboardingData: Onboarding | null) => {
     const cacheKey = "forage_insights";
@@ -148,7 +150,7 @@ export default function DashboardPage() {
       const [{ data: logsData }, { data: profileData }, { data: onboardingData }, { data: recentLogs }, { data: streakLogs }, { data: tierData }] = await Promise.all([
         supabase.from("meal_logs").select("id, name, calories, protein_g, carbs_g, fat_g, logged_at, nutrition_meta").eq("user_id", user.id).gte("logged_at", todayStart.toISOString()).lte("logged_at", todayEnd.toISOString()).order("logged_at", { ascending: false }).limit(100),
         supabase.from("profiles").select("display_name, avatar_url").eq("id", user.id).single(),
-        supabase.from("onboarding").select("goals, meals_per_week").eq("user_id", user.id).single(),
+        supabase.from("onboarding").select("*").eq("user_id", user.id).single(),
         supabase.from("meal_logs").select("name, calories, protein_g, carbs_g, fat_g, logged_at").eq("user_id", user.id).gte("logged_at", sevenDaysAgo.toISOString()).order("logged_at", { ascending: false }).limit(300),
         supabase.from("meal_logs").select("logged_at").eq("user_id", user.id).gte("logged_at", thirtyDaysAgo.toISOString()).order("logged_at", { ascending: false }).limit(500),
         supabase.from("profiles").select("subscription_tier, ai_requests_month").eq("id", user.id).single(),
@@ -157,6 +159,23 @@ export default function DashboardPage() {
       if (logsData) setLogs(logsData);
       if (profileData) setProfile(profileData);
       if (onboardingData) setOnboarding(onboardingData);
+
+      // Personalized daily targets: prefer stored targets (set via Macro Calc /
+      // adaptive engine), else compute from body stats with Mifflin-St Jeor.
+      const ob = onboardingData as Record<string, unknown> | null;
+      if (ob) {
+        const t = computeTargets({
+          sex: ob.sex as string, age: ob.age as number, height_cm: ob.height_cm as number,
+          weight_kg: ob.weight_kg as number, activity: ob.activity_level as string,
+          goal: goalFromGoals(ob.goals),
+        });
+        setTargets({
+          calories: (ob.daily_calorie_target as number) || t.calories,
+          protein_g: (ob.protein_target as number) || t.protein_g,
+          carbs_g: (ob.carbs_target as number) || t.carbs_g,
+          fat_g: (ob.fat_target as number) || t.fat_g,
+        });
+      }
       if (tierData) {
         const effectiveTier = (tierData.subscription_tier as "free" | "pro") ?? "free";
         setTier(effectiveTier);
@@ -218,9 +237,9 @@ export default function DashboardPage() {
   const totalProtein = logs.reduce((s, m) => s + m.protein_g, 0);
   const totalCarbs = logs.reduce((s, m) => s + m.carbs_g, 0);
   const totalFat = logs.reduce((s, m) => s + m.fat_g, 0);
-  const remaining = CALORIE_GOAL - totalCals;
-  const progress = Math.min((totalCals / CALORIE_GOAL) * 100, 100);
-  const proteinProgress = Math.min((totalProtein / PROTEIN_GOAL) * 100, 100);
+  const remaining = targets.calories - totalCals;
+  const progress = Math.min((totalCals / targets.calories) * 100, 100);
+  const proteinProgress = Math.min((totalProtein / targets.protein_g) * 100, 100);
 
   const firstName = profile?.display_name?.split(" ")[0] || "there";
   const hour = new Date().getHours();
@@ -284,7 +303,7 @@ export default function DashboardPage() {
     { label: "Scan Receipt", href: "/dashboard/receipts", icon: "📄", desc: "Track spend & nutrition" },
   ];
 
-  const weeklyMax = Math.max(...weeklyData.map((d) => d.cals), CALORIE_GOAL);
+  const weeklyMax = Math.max(...weeklyData.map((d) => d.cals), targets.calories);
   const todayIso = new Date().toISOString().split("T")[0];
 
   /* ── upgrade nudge shared between mobile top and desktop right column ── */
@@ -369,7 +388,7 @@ export default function DashboardPage() {
                   {Math.abs(remaining).toLocaleString()}
                 </p>
                 <p className="text-text-secondary text-sm mt-0.5">{remaining > 0 ? "kcal remaining" : "kcal over goal"}</p>
-                <p className="text-text-muted text-xs mt-1">Goal: {CALORIE_GOAL.toLocaleString()} kcal</p>
+                <p className="text-text-muted text-xs mt-1">Goal: {targets.calories.toLocaleString()} kcal</p>
               </div>
             </div>
 
@@ -409,9 +428,9 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex-1">
                   <p className="text-text-muted text-xs uppercase tracking-wider mb-0.5">Protein Goal</p>
-                  <p className="num font-display font-black text-2xl text-lime leading-none">{Math.round(totalProtein)}g <span className="text-text-muted text-sm font-normal">/ {PROTEIN_GOAL}g</span></p>
+                  <p className="num font-display font-black text-2xl text-lime leading-none">{Math.round(totalProtein)}g <span className="text-text-muted text-sm font-normal">/ {targets.protein_g}g</span></p>
                   <p className="text-text-secondary text-xs mt-1">
-                    {totalProtein >= PROTEIN_GOAL ? "✓ Protein goal hit!" : `${PROTEIN_GOAL - Math.round(totalProtein)}g left to hit your muscle-building target`}
+                    {totalProtein >= targets.protein_g ? "✓ Protein goal hit!" : `${targets.protein_g - Math.round(totalProtein)}g left to hit your muscle-building target`}
                   </p>
                 </div>
               </div>
@@ -432,7 +451,7 @@ export default function DashboardPage() {
                 {weeklyData.map((day) => {
                   const isToday = day.date === todayIso;
                   const pct = day.cals > 0 ? Math.min((day.cals / weeklyMax) * 100, 100) : 0;
-                  const goalPct = Math.min((CALORIE_GOAL / weeklyMax) * 100, 100);
+                  const goalPct = Math.min((targets.calories / weeklyMax) * 100, 100);
                   return (
                     <div key={day.date} className="flex-1 flex flex-col items-center gap-1 group relative">
                       <div className="w-full flex flex-col justify-end" style={{ height: "80px" }}>

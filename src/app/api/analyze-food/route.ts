@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { checkAiAccess } from "@/lib/subscription";
+import { cacheGet, cacheSet, cacheKey } from "@/lib/cache";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -51,14 +52,11 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const access = await checkAiAccess(user.id, user.email ?? "");
-    if (!access.allowed) {
-      return NextResponse.json({
-        error: "Monthly AI limit reached. Upgrade to Pro for unlimited access.",
-        upgrade: true,
-        remaining: 0,
-      }, { status: 402 });
-    }
+    const quotaError = () => NextResponse.json({
+      error: "Monthly AI limit reached. Upgrade to Pro for unlimited access.",
+      upgrade: true,
+      remaining: 0,
+    }, { status: 402 });
 
     const contentType = req.headers.get("content-type") || "";
 
@@ -67,21 +65,31 @@ export async function POST(req: NextRequest) {
       const { description, brand, product, serving } = await req.json();
 
       let prompt = "";
+      let ck = "";
 
       if (brand || product) {
         const servingNote = serving ? ` (serving size: ${serving})` : "";
+        ck = cacheKey("food:brand", `${brand ?? ""}|${product ?? ""}|${serving ?? ""}`);
         prompt = `Look up the nutrition facts for this branded food item and call log_nutrition with the values:
 Brand: ${brand || "unknown"}
 Product: ${product || "unknown"}${servingNote}
 
 Use your knowledge of published nutrition labels. If you know the exact facts, use them. If estimating, set confidence to "low".`;
       } else if (description) {
+        ck = cacheKey("food:desc", String(description));
         prompt = `A user described their meal as: "${description}"
 
 Estimate the nutritional content and call log_nutrition with the values. Use typical serving sizes and standard recipes. If multiple items are described, sum all macros into one total. If vague, set confidence to "low".`;
       } else {
         return NextResponse.json({ error: "No input provided" }, { status: 400 });
       }
+
+      // Cache hit → instant, and doesn't consume the AI quota or an API call.
+      const cached = await cacheGet<Record<string, unknown>>(ck);
+      if (cached) return NextResponse.json({ ...cached, cached: true });
+
+      const access = await checkAiAccess(user.id, user.email ?? "");
+      if (!access.allowed) return quotaError();
 
       const response = await client.messages.create({
         model: "claude-haiku-4-5-20251001", // text/brand lookups — Haiku is fast and cheap
@@ -94,8 +102,13 @@ Estimate the nutritional content and call log_nutrition with the values. Use typ
 
       const input = extractToolInput(response);
       if (!input) return NextResponse.json({ error: "Analysis failed" }, { status: 500 });
+      await cacheSet(ck, input);
       return NextResponse.json(input);
     }
+
+    // IMAGE mode requires quota (images aren't cached — each photo is unique)
+    const imgAccess = await checkAiAccess(user.id, user.email ?? "");
+    if (!imgAccess.allowed) return quotaError();
 
     // IMAGE mode
     const formData = await req.formData();

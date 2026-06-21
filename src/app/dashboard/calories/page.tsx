@@ -675,8 +675,11 @@ export default function CaloriesPage() {
   // Backdated logging: the timestamp new entries are saved with (defaults to the
   // selected day at the current time so logging a missed meal "lands" correctly).
   const [logAt, setLogAt] = useState<string>(() => toLocalInput(new Date()));
+  const [lastDeleted, setLastDeleted] = useState<MealLog | null>(null);
+  const [recents, setRecents] = useState<MealLog[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   const libraryRef = useRef<HTMLInputElement>(null);
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const today = new Date(); today.setHours(0,0,0,0);
   const isToday = selectedDate.getTime() === today.getTime();
@@ -735,6 +738,27 @@ export default function CaloriesPage() {
     const { data: profile } = await supabase.from("profiles").select("subscription_tier").eq("id", user.id).single();
     setUserTier((profile?.subscription_tier as "free" | "pro") ?? "free");
     loadLogs(selectedDate);
+    loadRecents(user.id);
+  };
+
+  // Distinct recently-logged foods for one-tap re-logging (last 21 days).
+  const loadRecents = async (userId: string) => {
+    const since = new Date(Date.now() - 21 * 86400000).toISOString();
+    const { data } = await supabase.from("meal_logs")
+      .select("name, calories, protein_g, carbs_g, fat_g, nutrition_meta")
+      .eq("user_id", userId).gte("logged_at", since)
+      .order("logged_at", { ascending: false }).limit(150);
+    if (!data) return;
+    const seen = new Set<string>();
+    const out: MealLog[] = [];
+    for (const r of data) {
+      const key = r.name.trim().toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(r as MealLog);
+      if (out.length >= 12) break;
+    }
+    setRecents(out);
   };
 
   useEffect(() => { initLoad(); }, []);
@@ -843,6 +867,17 @@ export default function CaloriesPage() {
     else setSaving(false);
   };
 
+  // One-tap re-log of a recently eaten food.
+  const relogRecent = async (r: MealLog) => {
+    setSaving(true);
+    const ok = await saveToDb({
+      name: r.name, calories: r.calories, protein_g: r.protein_g, carbs_g: r.carbs_g, fat_g: r.fat_g,
+      source: "manual", nutrition_meta: r.nutrition_meta,
+    });
+    if (ok) await switchToLog();
+    else setSaving(false);
+  };
+
   const switchToLog = async () => {
     await loadLogs(selectedDate);
     const { data: { user } } = await supabase.auth.getUser();
@@ -896,8 +931,29 @@ export default function CaloriesPage() {
   };
 
   const removeEntry = async (id: string) => {
+    const entry = logs.find((e) => e.id === id);
     await supabase.from("meal_logs").delete().eq("id", id);
     setLogs((prev) => prev.filter((e) => e.id !== id));
+    if (entry) {
+      setLastDeleted(entry);
+      if (undoTimer.current) clearTimeout(undoTimer.current);
+      undoTimer.current = setTimeout(() => setLastDeleted(null), 6000);
+    }
+  };
+
+  // Undo a delete by re-inserting the entry (a new id, same data).
+  const undoDelete = async () => {
+    if (!lastDeleted) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const e = lastDeleted;
+    setLastDeleted(null);
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    await supabase.from("meal_logs").insert({
+      user_id: user.id, name: e.name, calories: e.calories, protein_g: e.protein_g,
+      carbs_g: e.carbs_g, fat_g: e.fat_g, source: e.source, logged_at: e.logged_at, nutrition_meta: e.nutrition_meta,
+    });
+    await loadLogs(selectedDate);
   };
 
   // Edit an existing logged entry (name/macros/time). Reloads the day so a
@@ -1055,7 +1111,11 @@ export default function CaloriesPage() {
         </div>
       )}
 
-      {activeTab === "search" && <FoodSearchTab onLog={logFood} saving={saving} />}
+      {activeTab === "search" && (
+        <FoodSearchTab onLog={logFood} saving={saving}
+          recents={recents.map((r) => ({ name: r.name, calories: r.calories, protein_g: r.protein_g, carbs_g: r.carbs_g, fat_g: r.fat_g }))}
+          onRelog={(i) => relogRecent(recents[i])} />
+      )}
 
       {activeTab === "log" && (
         <div>
@@ -1541,6 +1601,14 @@ export default function CaloriesPage() {
             className="w-full bg-lime text-canvas font-display font-bold py-3.5 rounded-xl uppercase tracking-wider hover:bg-lime-glow transition-all shadow-lime-sm disabled:opacity-40 disabled:cursor-not-allowed">
             {saving ? "Saving..." : "Add to Log"}
           </button>
+        </div>
+      )}
+
+      {/* Undo toast — re-inserts a just-deleted entry */}
+      {lastDeleted && (
+        <div className="fixed left-1/2 -translate-x-1/2 z-[55] bottom-20 lg:bottom-6 flex items-center gap-4 bg-card border border-border rounded-2xl px-5 py-3 shadow-card animate-slide-up">
+          <span className="text-text-secondary text-sm">Removed <span className="text-text-primary font-medium">{lastDeleted.name}</span></span>
+          <button onClick={undoDelete} className="text-lime font-display font-bold text-sm uppercase tracking-wider hover:text-lime-glow transition-colors">Undo</button>
         </div>
       )}
     </div>
