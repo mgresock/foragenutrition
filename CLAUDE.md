@@ -126,7 +126,8 @@ Key policies:
 ```
 POST /api/analyze-food          Food analysis → macros + vitamins (Haiku)
 POST /api/grocery-ai            Claude grocery list + chat (Haiku)
-POST /api/scan-receipt          Receipt vision parse (Haiku) — Pro only
+POST /api/scan-receipt          Receipt vision parse (Opus 4.8) — Pro only
+GET  /api/food-search           Open Food Facts lookup — ?q=<text> search OR ?barcode=<digits> scan; auth-gated, normalized to macro shape
 GET  /api/nearby-stores         Overpass API store finder — parallel Promise.any() across 5 mirrors
 GET  /api/nearby-restaurants    Overpass API restaurant finder by ZIP (healthTag classification)
 POST /api/restaurant-menu       Claude tool_use → healthy menu picks (Haiku)
@@ -258,7 +259,14 @@ Always use `process.env.NEXT_PUBLIC_SITE_URL` — never `req.headers.get("origin
 - Saved as ONE `meal_logs` row, `source: "manual"`, with every part stored in `nutrition_meta.components` (jsonb `MealComponent[]` — flattened macro+micro fields). **No DB migration needed** — reuses the existing `nutrition_meta` column.
 - Viewable later: `EntryDetailModal` renders a "Meal Parts" section (per-part protein/macros) whenever `nutrition_meta.components` is present.
 - The daily summary header is a macro-calculator-style hero (ring + grams + % split), replacing the old 4-stat grid.
-- E2E: `e2e/meal-builder.spec.ts` (gated behind E2E_TEST_EMAIL/PASSWORD) builds → saves → reopens → cleans up.
+- E2E: `e2e/meal-builder.spec.ts` (gated behind E2E_TEST_EMAIL/PASSWORD) builds → saves → reopens → edits → cleans up; also checks the Search tab + backdating controls render.
+
+## Calorie Tracker — Food Search, Barcode, Backdating, Editing
+- **🔍 Search tab** (`FoodSearchTab.tsx`): text search + **barcode scan** against Open Food Facts via `/api/food-search`. Pick a result → adjust amount (servings ×) → logs as `source: "manual"` with provenance in `nutrition_meta` (`source_detail`, `barcode`, `basis`, `servings`, `grade`). Per-serving values used when available, else per-100g.
+- **Barcode scanner** (`BarcodeScanner.tsx`): camera scanner via `@zxing/browser` (EAN/UPC). **Lazy-loaded** with `next/dynamic` so @zxing only downloads when scanning starts (keeps the calorie page bundle ~16 kB, not ~135 kB). Handles camera-permission-denied gracefully.
+- **Backdated logging**: a "Logging for" `datetime-local` picker (shown on every non-log tab) sets `logAt`; `saveToDb` stamps every new entry with `loggedAtISO()`. Defaults to the viewed day at current time, so logging a missed meal lands on the right day. All logging methods are available on any selected day.
+- **Edit entries**: `EntryDetailModal` has an Edit (pencil) mode — change name/macros/time → `updateEntry` runs `update` + reloads the day (so a changed timestamp moves the entry). Editing totals does NOT recompute a crafted meal's `nutrition_meta.components`.
+- **Photo tab**: two buttons — "Take Photo" (`<input capture="environment">`, rear camera) and "Choose from Library" (`<input>` without capture → OS photo picker, asks permission). For the Capacitor native wrap, swap to `@capacitor/camera` `getPhoto({ source: CameraSource.Prompt })`.
 
 ## Dashboard Features
 - **DailyFact**: `useState(FUN_FACTS[0])` + `useEffect` randomize — do NOT use `Math.random()` in useState initializer (causes SSR hydration mismatch)

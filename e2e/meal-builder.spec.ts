@@ -56,6 +56,26 @@ test("build a multi-part meal, save it, and reopen the breakdown", async ({ page
   await expect(page.getByText("Grilled chicken breast")).toBeVisible();
   await expect(page.getByText("White rice")).toBeVisible();
 
-  // Clean up so repeated runs don't pile up test data.
+  // Edit it — rename and confirm the change persists in the log.
+  await page.getByTitle("Edit").click();
+  await expect(page.getByText("Edit Entry")).toBeVisible();
+  const renamed = `${mealName} EDITED`;
+  await page.getByLabel("entry-name").fill(renamed);
+  await page.getByRole("button", { name: "Save Changes" }).click();
+  // Modal returns to the detail view showing the new name (the heading is unique).
+  await expect(page.getByRole("heading", { name: renamed })).toBeVisible({ timeout: 10_000 });
+
+  // Clean up so repeated runs don't pile up test data (modal is still open on it).
   await page.getByRole("button", { name: "Remove from Log" }).click();
+});
+
+test("food search tab + backdated-logging controls render", async ({ page }) => {
+  await login(page);
+  await page.goto("/dashboard/calories");
+
+  await page.getByRole("button", { name: /Search/ }).click();
+  await expect(page.getByPlaceholder(/Search a food/)).toBeVisible();
+  await expect(page.getByRole("button", { name: /Scan barcode/ })).toBeVisible();
+  // Backdating control shows on any non-log tab
+  await expect(page.getByText("Logging for")).toBeVisible();
 });

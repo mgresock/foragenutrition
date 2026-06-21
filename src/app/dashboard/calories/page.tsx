@@ -3,7 +3,14 @@
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ForageSpinner } from "@/components/ui/ForageSpinner";
+import { FoodSearchTab, type FoodLogEntry } from "@/components/calories/FoodSearchTab";
 import Link from "next/link";
+
+// datetime-local <input> value (local time) from a Date
+function toLocalInput(d: Date) {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
 
 // A single part of a crafted meal — stored inside nutrition_meta.components so
 // the full per-ingredient breakdown can be viewed again later.
@@ -128,7 +135,36 @@ function MiniBar({ value, max, color }: { value: number; max: number; color: str
   );
 }
 
-function EntryDetailModal({ entry, onClose, onDelete }: { entry: MealLog; onClose: () => void; onDelete: (id: string) => void }) {
+function EntryDetailModal({ entry, onClose, onDelete, onUpdate }: { entry: MealLog; onClose: () => void; onDelete: (id: string) => void; onUpdate: (id: string, patch: Partial<MealLog> & { logged_at?: string }) => void | Promise<void> }) {
+  const [editing, setEditing] = useState(false);
+  const [eName, setEName] = useState(entry.name);
+  const [eCals, setECals] = useState(String(entry.calories));
+  const [eProtein, setEProtein] = useState(String(entry.protein_g));
+  const [eCarbs, setECarbs] = useState(String(entry.carbs_g));
+  const [eFat, setEFat] = useState(String(entry.fat_g));
+  const [eWhen, setEWhen] = useState(toLocalInput(new Date(entry.logged_at)));
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const startEdit = () => {
+    setEName(entry.name); setECals(String(entry.calories)); setEProtein(String(entry.protein_g));
+    setECarbs(String(entry.carbs_g)); setEFat(String(entry.fat_g)); setEWhen(toLocalInput(new Date(entry.logged_at)));
+    setEditing(true);
+  };
+  const saveEdit = async () => {
+    setSavingEdit(true);
+    const d = new Date(eWhen);
+    await onUpdate(entry.id, {
+      name: eName.trim() || entry.name,
+      calories: Math.round(Number(eCals) || 0),
+      protein_g: Number(eProtein) || 0,
+      carbs_g: Number(eCarbs) || 0,
+      fat_g: Number(eFat) || 0,
+      logged_at: isNaN(d.getTime()) ? entry.logged_at : d.toISOString(),
+    });
+    setSavingEdit(false);
+    setEditing(false);
+  };
+
   const meta = entry.nutrition_meta ?? {};
   const totalMacroCals = entry.protein_g * 4 + entry.carbs_g * 4 + entry.fat_g * 9;
   const pct = (val: number, mult: number) => totalMacroCals > 0 ? Math.round((val * mult / totalMacroCals) * 100) : 0;
@@ -201,6 +237,51 @@ function EntryDetailModal({ entry, onClose, onDelete }: { entry: MealLog; onClos
     ai_photo: "Photo", ai_describe: "Described", ai_brand: "Brand", manual: "Manual",
   };
 
+  if (editing) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center" onClick={onClose}>
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div className="relative w-full lg:max-w-md bg-surface border border-border rounded-t-3xl lg:rounded-3xl p-6 pb-8 lg:pb-6 z-10 max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="w-10 h-1 bg-border rounded-full mx-auto mb-5 lg:hidden" />
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="font-display font-bold text-xl text-text-primary uppercase tracking-tight">Edit Entry</h2>
+            <button onClick={() => setEditing(false)} className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center text-text-muted hover:text-text-primary text-sm">✕</button>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs text-text-secondary mb-1.5 uppercase tracking-wider">Name</label>
+              <input aria-label="entry-name" value={eName} onChange={(e) => setEName(e.target.value)} className="w-full bg-card border border-border rounded-xl px-4 py-3 text-text-primary text-sm focus:outline-none focus:border-lime/50" />
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { label: "Cals", v: eCals, set: setECals },
+                { label: "Protein", v: eProtein, set: setEProtein },
+                { label: "Carbs", v: eCarbs, set: setECarbs },
+                { label: "Fat", v: eFat, set: setEFat },
+              ].map((f) => (
+                <div key={f.label}>
+                  <label className="block text-[10px] text-text-muted mb-1">{f.label}</label>
+                  <input type="number" min={0} value={f.v} onChange={(e) => f.set(e.target.value)} className="w-full bg-card border border-border rounded-xl px-2.5 py-2 text-text-primary text-sm num focus:outline-none focus:border-lime/50" />
+                </div>
+              ))}
+            </div>
+            <div>
+              <label className="block text-xs text-text-secondary mb-1.5 uppercase tracking-wider">When</label>
+              <input type="datetime-local" value={eWhen} max={toLocalInput(new Date())} onChange={(e) => setEWhen(e.target.value)} className="w-full bg-card border border-border rounded-xl px-4 py-3 text-text-primary text-sm focus:outline-none focus:border-lime/50" />
+            </div>
+            {meta.components && meta.components.length > 0 && (
+              <p className="text-text-muted text-xs">Note: editing the totals here won't recompute the per-part breakdown.</p>
+            )}
+            <div className="flex gap-3 pt-1">
+              <button onClick={saveEdit} disabled={savingEdit} className="flex-1 bg-lime text-canvas font-display font-bold py-3 rounded-xl text-sm uppercase tracking-wider hover:bg-lime-glow transition-all disabled:opacity-50">{savingEdit ? "Saving…" : "Save Changes"}</button>
+              <button onClick={() => setEditing(false)} className="px-5 py-3 bg-card border border-border rounded-xl text-sm text-text-secondary hover:border-border-bright transition-all">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
@@ -216,14 +297,19 @@ function EntryDetailModal({ entry, onClose, onDelete }: { entry: MealLog; onClos
             <h2 className="font-display font-bold text-xl text-text-primary leading-tight">{entry.name}</h2>
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               <span className="text-text-muted text-xs">
-                {new Date(entry.logged_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                {new Date(entry.logged_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })} · {new Date(entry.logged_at).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
               </span>
               <span className="px-1.5 py-0.5 rounded text-xs bg-card border border-border text-text-muted">
                 {sourceLabel[entry.source] ?? entry.source}
               </span>
             </div>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center text-text-muted hover:text-text-primary transition-colors text-sm flex-shrink-0">✕</button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button onClick={startEdit} title="Edit" className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center text-text-muted hover:text-lime transition-colors">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 20 20"><path d="M13.5 3.5l3 3L7 16l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg>
+            </button>
+            <button onClick={onClose} className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center text-text-muted hover:text-text-primary transition-colors text-sm">✕</button>
+          </div>
         </div>
 
         {/* Calorie overview */}
@@ -546,7 +632,7 @@ function MealGroupModal({ group, onClose, onSelectEntry }: { group: MealGroup; o
   );
 }
 
-type Tab = "log" | "camera" | "describe" | "brand" | "build" | "manual";
+type Tab = "log" | "search" | "camera" | "describe" | "brand" | "build" | "manual";
 
 export default function CaloriesPage() {
   const supabase = createClient();
@@ -586,7 +672,11 @@ export default function CaloriesPage() {
   const [userTier, setUserTier] = useState<"free" | "pro">("free");
   const [userEmail, setUserEmail] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date>(() => { const d = new Date(); d.setHours(0,0,0,0); return d; });
+  // Backdated logging: the timestamp new entries are saved with (defaults to the
+  // selected day at the current time so logging a missed meal "lands" correctly).
+  const [logAt, setLogAt] = useState<string>(() => toLocalInput(new Date()));
   const fileRef = useRef<HTMLInputElement>(null);
+  const libraryRef = useRef<HTMLInputElement>(null);
 
   const today = new Date(); today.setHours(0,0,0,0);
   const isToday = selectedDate.getTime() === today.getTime();
@@ -648,16 +738,30 @@ export default function CaloriesPage() {
   };
 
   useEffect(() => { initLoad(); }, []);
-  useEffect(() => { loadLogs(selectedDate); }, [selectedDate]);
+  useEffect(() => {
+    loadLogs(selectedDate);
+    // Keep the "logging for" timestamp on the day being viewed, at the current time.
+    const now = new Date();
+    const d = new Date(selectedDate);
+    d.setHours(now.getHours(), now.getMinutes(), 0, 0);
+    setLogAt(toLocalInput(d));
+  }, [selectedDate]);
 
   const totalCals = logs.reduce((s, m) => s + m.calories, 0);
   const totalProtein = logs.reduce((s, m) => s + m.protein_g, 0);
   const totalCarbs = logs.reduce((s, m) => s + m.carbs_g, 0);
   const totalFat = logs.reduce((s, m) => s + m.fat_g, 0);
 
-  const visibleTabs: { id: Tab; label: string }[] = isToday
-    ? [{ id: "log", label: "Log" }, { id: "build", label: "🧩 Build" }, { id: "camera", label: "📷 Photo" }, { id: "describe", label: "✍️ Describe" }, { id: "brand", label: "🏪 Brand" }, { id: "manual", label: "Manual" }]
-    : [{ id: "log", label: "Log" }];
+  // All logging methods are available on any selected day (backdated logging).
+  const visibleTabs: { id: Tab; label: string }[] = [
+    { id: "log", label: "Log" },
+    { id: "search", label: "🔍 Search" },
+    { id: "build", label: "🧩 Build" },
+    { id: "camera", label: "📷 Photo" },
+    { id: "describe", label: "✍️ Describe" },
+    { id: "brand", label: "🏪 Brand" },
+    { id: "manual", label: "Manual" },
+  ];
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -717,12 +821,26 @@ export default function CaloriesPage() {
     setAnalyzing(false);
   };
 
+  // ISO timestamp new entries are logged with (from the backdating picker).
+  const loggedAtISO = () => {
+    const d = new Date(logAt);
+    return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+  };
+
   const saveToDb = async (entry: { name: string; calories: number; protein_g: number; carbs_g: number; fat_g: number; source: string; image_path?: string; nutrition_meta?: NutritionMeta }) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
-    const { error } = await supabase.from("meal_logs").insert({ user_id: user.id, ...entry });
+    const { error } = await supabase.from("meal_logs").insert({ user_id: user.id, logged_at: loggedAtISO(), ...entry });
     if (error) console.error("saveToDb error:", error);
     return !error;
+  };
+
+  // Log a food picked from the Open Food Facts search / barcode scan.
+  const logFood = async (entry: FoodLogEntry) => {
+    setSaving(true);
+    const ok = await saveToDb(entry as unknown as Parameters<typeof saveToDb>[0]);
+    if (ok) await switchToLog();
+    else setSaving(false);
   };
 
   const switchToLog = async () => {
@@ -780,6 +898,15 @@ export default function CaloriesPage() {
   const removeEntry = async (id: string) => {
     await supabase.from("meal_logs").delete().eq("id", id);
     setLogs((prev) => prev.filter((e) => e.id !== id));
+  };
+
+  // Edit an existing logged entry (name/macros/time). Reloads the day so a
+  // changed timestamp moves the entry to the correct day.
+  const updateEntry = async (id: string, patch: Partial<MealLog> & { logged_at?: string }) => {
+    const { error } = await supabase.from("meal_logs").update(patch).eq("id", id);
+    if (error) { console.error("updateEntry error:", error); return; }
+    setSelectedEntry((prev) => (prev && prev.id === id ? ({ ...prev, ...patch } as MealLog) : prev));
+    await loadLogs(selectedDate);
   };
 
   // ── Meal builder ──────────────────────────────────────────────────────────
@@ -914,6 +1041,22 @@ export default function CaloriesPage() {
         ))}
       </div>
 
+      {/* Backdated logging — choose when this entry happened (defaults to the viewed day) */}
+      {activeTab !== "log" && (
+        <div className="flex items-center gap-2 mb-5 px-3 py-2.5 bg-card border border-border rounded-xl">
+          <svg className="w-4 h-4 text-lime flex-shrink-0" fill="none" viewBox="0 0 20 20">
+            <circle cx="10" cy="10" r="7.5" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M10 6v4l2.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span className="text-text-secondary text-xs whitespace-nowrap">Logging for</span>
+          <input type="datetime-local" value={logAt} max={toLocalInput(new Date())}
+            onChange={(e) => setLogAt(e.target.value)}
+            className="flex-1 min-w-0 bg-surface border border-border rounded-lg px-3 py-1.5 text-text-primary text-sm focus:outline-none focus:border-lime/50" />
+        </div>
+      )}
+
+      {activeTab === "search" && <FoodSearchTab onLog={logFood} saving={saving} />}
+
       {activeTab === "log" && (
         <div>
           {logs.length === 0 ? (
@@ -1002,13 +1145,25 @@ export default function CaloriesPage() {
               </Link>
             </div>
           ) : !imagePreview ? (
-            <div onClick={() => fileRef.current?.click()}
-              className="border-2 border-dashed border-border rounded-2xl p-12 text-center cursor-pointer hover:border-lime/40 hover:bg-lime/5 transition-all group">
+            <div className="border-2 border-dashed border-border rounded-2xl p-10 text-center">
               <div className="text-5xl mb-4">📷</div>
-              <h3 className="font-display font-bold text-text-primary mb-2">Take or upload a photo</h3>
-              <p className="text-text-secondary text-sm mb-4">Our AI will identify the food and estimate calories & macros</p>
-              <span className="inline-block px-4 py-2 bg-lime/10 border border-lime/30 rounded-xl text-lime text-sm group-hover:bg-lime/20 transition-all">Choose Photo</span>
+              <h3 className="font-display font-bold text-text-primary mb-2">Add a food photo</h3>
+              <p className="text-text-secondary text-sm mb-5">Our AI will identify the food and estimate calories &amp; macros</p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button onClick={() => fileRef.current?.click()}
+                  className="flex items-center justify-center gap-2 px-5 py-3 bg-lime text-canvas font-display font-bold rounded-xl text-sm hover:bg-lime-glow transition-all">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 20 20"><rect x="2.5" y="5" width="15" height="11" rx="2" stroke="currentColor" strokeWidth="1.5"/><circle cx="10" cy="10.5" r="2.5" stroke="currentColor" strokeWidth="1.5"/><path d="M7 5l1-2h4l1 2" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg>
+                  Take Photo
+                </button>
+                <button onClick={() => libraryRef.current?.click()}
+                  className="flex items-center justify-center gap-2 px-5 py-3 bg-surface border border-border text-text-primary rounded-xl text-sm hover:border-lime/40 transition-all">
+                  <svg className="w-4 h-4 text-lime" fill="none" viewBox="0 0 20 20"><rect x="2.5" y="3.5" width="15" height="13" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M3 13l4-3.5 3 2.5 3-3 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><circle cx="7" cy="7.5" r="1.2" fill="currentColor"/></svg>
+                  Choose from Library
+                </button>
+              </div>
+              {/* capture=camera opens the rear camera; the library input omits capture so the OS shows the photo picker (asks permission as needed) */}
               <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handleImageUpload} className="hidden" />
+              <input ref={libraryRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
             </div>
           ) : (
             <div className="space-y-4">
@@ -1225,6 +1380,7 @@ export default function CaloriesPage() {
           entry={selectedEntry}
           onClose={() => setSelectedEntry(null)}
           onDelete={(id) => { removeEntry(id); setSelectedEntry(null); }}
+          onUpdate={updateEntry}
         />
       )}
 
