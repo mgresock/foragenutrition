@@ -387,6 +387,13 @@ STRIPE_MONTHLY_PRICE_ID
 STRIPE_YEARLY_PRICE_ID
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 NEXT_PUBLIC_SITE_URL (= https://yourdomain.com — used for Stripe redirects and password reset links)
-UPSTASH_REDIS_REST_URL    (rate limiting — optional; limiters no-op if unset)
-UPSTASH_REDIS_REST_TOKEN  (rate limiting — optional; limiters no-op if unset)
+UPSTASH_REDIS_REST_URL    (rate limiting + AI/food cache — optional; no-op if unset)
+UPSTASH_REDIS_REST_TOKEN  (rate limiting + AI/food cache — optional; no-op if unset)
+CRON_SECRET               (weekly /api/recompute-targets cron — Vercel sends it as Authorization: Bearer)
+USDA_FDC_API_KEY          (food-search USDA fallback — optional; falls back to DEMO_KEY)
 ```
+
+## Recent feature surfaces (routes/pages)
+- Pages: `/dashboard/macros` (Macro Calculator), `/dashboard/insights` (trends + achievements), `/dashboard/settings/account` (export + delete).
+- Routes: `/api/food-search` (OFF + USDA), `/api/recompute-targets` (adaptive, self + weekly cron), `/api/recipe-import` (URL → ingredients/macros), `/api/account/export`, `/api/account/delete`.
+- Libs: `src/lib/nutrition.ts` (Mifflin-St Jeor TDEE + adaptive), `src/lib/cache.ts` (Upstash read-through). Migrations: `db/feature-tables.sql`.
