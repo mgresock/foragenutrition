@@ -73,7 +73,7 @@ test("food search tab + backdated-logging controls render", async ({ page }) => 
   await login(page);
   await page.goto("/dashboard/calories");
 
-  await page.getByRole("button", { name: /Search/ }).click();
+  await page.getByRole("button", { name: "🔍 Search" }).click();
   await expect(page.getByPlaceholder(/Search a food/)).toBeVisible();
   await expect(page.getByRole("button", { name: /Scan barcode/ })).toBeVisible();
   // Backdating control shows on any non-log tab
