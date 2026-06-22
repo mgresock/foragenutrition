@@ -267,6 +267,12 @@ Always use `process.env.NEXT_PUBLIC_SITE_URL` — never `req.headers.get("origin
 - **Backdated logging**: a "Logging for" `datetime-local` picker (shown on every non-log tab) sets `logAt`; `saveToDb` stamps every new entry with `loggedAtISO()`. Defaults to the viewed day at current time, so logging a missed meal lands on the right day. All logging methods are available on any selected day.
 - **Edit entries**: `EntryDetailModal` has an Edit (pencil) mode — change name/macros/time → `updateEntry` runs `update` + reloads the day (so a changed timestamp moves the entry). Editing totals does NOT recompute a crafted meal's `nutrition_meta.components`.
 - **Photo tab**: two buttons — "Take Photo" (`<input capture="environment">`, rear camera) and "Choose from Library" (`<input>` without capture → OS photo picker, asks permission). For the Capacitor native wrap, swap to `@capacitor/camera` `getPhoto({ source: CameraSource.Prompt })`.
+- **Recent foods** quick re-log (distinct names from last 21d of `meal_logs`, no table) + **Copy yesterday's meals** (re-inserts prev-day logs at same times).
+- **Soft-delete + Undo** toast (re-inserts the deleted row). **Meal-time targets**: per-slot calorie pacing in day-group headers (`SLOT_FRACTION` of the computed daily target).
+- **Meal builder extras**: reorder parts (▲▼ `moveComponent`), **Save as reusable template** → `meal_templates` table; templates load back into the builder. `/api/analyze-food` now itemizes (per-component) and grounds totals as the item sum; the breakdown rides in `nutrition_meta.components`.
+
+## AI Estimator Accuracy
+- `analyze-food` (photo Opus 4.8, describe/brand Haiku) requires an `items[]` breakdown (name, portion, macros) and the route recomputes totals as the SUM of items (`groundFromItems`) — far more accurate than a holistic guess. Photo prompt uses visual scale cues; cache keys are `food:desc:v2` / `food:brand:v2`. Do NOT use `temperature: 0`.
 
 ## Dashboard Features
 - **DailyFact**: `useState(FUN_FACTS[0])` + `useEffect` randomize — do NOT use `Math.random()` in useState initializer (causes SSR hydration mismatch)
@@ -357,6 +363,11 @@ Always use `process.env.NEXT_PUBLIC_SITE_URL` — never `req.headers.get("origin
 - `playwright.config.ts` + `e2e/*.spec.ts`. Run with `npm run test:e2e`. Playwright auto-starts `npm run dev`.
 - `e2e/auth.spec.ts` covers auth-page render, sign-up toggle, and password-mismatch validation (no credentials needed). A real-login test runs only when `E2E_TEST_EMAIL` + `E2E_TEST_PASSWORD` are set (dedicated confirmed test account — never a real user), otherwise skips.
 - Adding Playwright does NOT affect the Next.js build/runtime — `e2e/` and the config are test-only.
+- `e2e/meal-builder.spec.ts` (gated) covers: build→save→reopen→edit, Search/backdating render, Macro Calc render. Helper `scripts/run-e2e-temp-user.mjs` creates a confirmed throwaway user via service role, runs the suite with creds, then deletes it.
+- **GOTCHA: clean `.next` before running E2E if you just ran `next build`.** The production `.next` collides with the `next dev` the test harness starts → the authed login tests time out (looks like a regression, isn't). `rm -rf .next` first. Also kill stray `node` dev servers (`reuseExistingServer` reuses a hung one on :3000).
+
+## Branches
+- **`main` and `master` are unified** — same commit, kept in lockstep. Workflow each commit: commit on `master` (main project root) → `git push origin master:master` AND `git push origin master:main` → `git -C .claude/worktrees/<id> reset --hard origin/main`. Vercel deploys `main`. Confirm with `git rev-parse origin/main origin/master` (must match).
 
 ## Query Performance
 - **Indexes live in `db/performance-indexes.sql`** — run in Supabase SQL Editor. Postgres does NOT auto-index foreign keys, so every per-user query needs them. Key one: `meal_logs (user_id, logged_at desc)` covers today's log, 7/30-day analytics, friend progress, and AI insights.
