@@ -80,6 +80,9 @@ export default function GroceryPage() {
   const supabase = createClient();
   const [listId, setListId] = useState<string | null>(null);
   const [list, setList] = useState<GroceryItem[]>([]);
+  const [recipeUrl, setRecipeUrl] = useState("");
+  const [recipeImporting, setRecipeImporting] = useState(false);
+  const [recipeMsg, setRecipeMsg] = useState("");
   const [filter, setFilter] = useState("All");
   const [query, setQuery] = useState("");
   const [generating, setGenerating] = useState(false);
@@ -177,6 +180,29 @@ export default function GroceryPage() {
     setSelectedStores((prev) =>
       prev.includes(name) ? prev.filter((s) => s !== name) : [...prev, name]
     );
+  };
+
+  // Import a recipe from a URL → append its ingredients to the grocery list.
+  const importRecipe = async () => {
+    if (!recipeUrl.trim()) return;
+    setRecipeImporting(true); setRecipeMsg("");
+    try {
+      const res = await fetch("/api/recipe-import", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: recipeUrl.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setRecipeMsg(data.error || "Import failed."); return; }
+      const ings: { item: string; quantity: string }[] = data.ingredients ?? [];
+      const newItems: GroceryItem[] = ings.map((ing, i) => ({
+        id: `recipe-${Date.now()}-${i}`, name: ing.item, quantity: ing.quantity || "",
+        estimatedPrice: 0, store: "", category: "Other", checked: false,
+      }));
+      setList((prev) => [...prev, ...newItems]);
+      setRecipeMsg(`Added ${newItems.length} ingredients from “${data.title}”.`);
+      setRecipeUrl("");
+    } catch { setRecipeMsg("Import failed."); }
+    finally { setRecipeImporting(false); }
   };
 
   const addManualStore = (name: string) => {
@@ -569,6 +595,22 @@ export default function GroceryPage() {
         {selectedStores.length === 0 && !loadingStores && (
           <p className="text-text-muted text-xs mt-2 italic">No stores selected — AI will pick stores for your area.</p>
         )}
+
+        {/* Recipe import */}
+        <div className="mt-4 pt-4 border-t border-border">
+          <label className="block text-xs text-text-secondary mb-2 uppercase tracking-wider">Import from a recipe URL</label>
+          <div className="flex gap-2">
+            <input type="url" value={recipeUrl} onChange={(e) => setRecipeUrl(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") importRecipe(); }}
+              placeholder="https://… paste a recipe link"
+              className="flex-1 min-w-0 bg-surface border border-border rounded-xl px-3 py-2.5 text-text-primary placeholder-text-muted text-sm focus:outline-none focus:border-lime/50" />
+            <button onClick={importRecipe} disabled={recipeImporting || !recipeUrl.trim()}
+              className="px-4 bg-lime/15 border border-lime/30 text-lime rounded-xl text-sm font-medium hover:bg-lime/25 transition-all disabled:opacity-40 whitespace-nowrap">
+              {recipeImporting ? "Importing…" : "Import"}
+            </button>
+          </div>
+          {recipeMsg && <p className="text-text-muted text-xs mt-2">{recipeMsg}</p>}
+        </div>
       </div>
 
       {/* Meal Plan */}

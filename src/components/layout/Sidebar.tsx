@@ -62,6 +62,15 @@ const NAV = [
 
 const SIDEBAR_EXTRA = [
   {
+    href: "/dashboard/insights",
+    label: "Insights",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 20 20">
+        <path d="M3 17V8M8 17V4M13 17v-6M18 17v-9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     href: "/dashboard/macros",
     label: "Macro Calc",
     icon: (

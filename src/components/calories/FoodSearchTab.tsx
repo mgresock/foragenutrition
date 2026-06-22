@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { ForageSpinner } from "@/components/ui/ForageSpinner";
 
@@ -58,11 +58,11 @@ export function FoodSearchTab({ onLog, saving, recents = [], onRelog }: {
   const [scanning, setScanning] = useState(false);
   const [scanLookup, setScanLookup] = useState(false);
 
-  const search = async () => {
-    if (query.trim().length < 2) return;
+  const runSearch = async (q: string) => {
+    if (q.trim().length < 2) return;
     setLoading(true); setError(null); setResults(null); setSelected(null);
     try {
-      const res = await fetch(`/api/food-search?q=${encodeURIComponent(query.trim())}`);
+      const res = await fetch(`/api/food-search?q=${encodeURIComponent(q.trim())}`);
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Search failed."); return; }
       setResults(data.results ?? []);
@@ -70,6 +70,19 @@ export function FoodSearchTab({ onLog, saving, recents = [], onRelog }: {
     } catch { setError("Something went wrong. Please try again."); }
     finally { setLoading(false); }
   };
+  const search = () => runSearch(query);
+
+  // Search-as-you-type (debounced) — Open Food Facts results are cached server-side.
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2 || selected) return;
+    const t = setTimeout(() => runSearch(q), 450);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
+
+  // "Find a healthier swap" — re-search the item name to surface higher-protein options.
+  const findSwap = (name: string) => { setSelected(null); setResults(null); setQuery(name); };
 
   const handleBarcode = async (code: string) => {
     setScanning(false);
@@ -201,6 +214,14 @@ export function FoodSearchTab({ onLog, saving, recents = [], onRelog }: {
               </div>
             ))}
           </div>
+
+          {/* Healthier-swap nudge for low Nutri-Score products */}
+          {selected.grade && /[de]/i.test(selected.grade) && (
+            <button onClick={() => findSwap(selected.name.replace(/\b(original|classic|regular)\b/gi, "").trim())}
+              className="w-full mb-3 flex items-center justify-center gap-2 bg-amber-app/10 border border-amber-app/30 text-amber-app rounded-xl py-2.5 text-sm transition-all hover:bg-amber-app/15">
+              ⚡ Nutri-Score {selected.grade.toUpperCase()} — find a higher-protein swap
+            </button>
+          )}
 
           <button onClick={add} disabled={saving}
             className="w-full bg-lime text-canvas font-display font-bold py-3 rounded-xl text-sm uppercase tracking-wider hover:bg-lime-glow transition-all disabled:opacity-50">

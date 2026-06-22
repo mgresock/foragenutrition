@@ -79,6 +79,39 @@ function normalize(p: {
   };
 }
 
+// USDA FoodData Central fallback — denser coverage for generic/whole foods.
+// Uses the free key (set USDA_FDC_API_KEY in env; DEMO_KEY works at low volume).
+async function usdaSearch(q: string): Promise<FoodResult[]> {
+  const key = process.env.USDA_FDC_API_KEY || "DEMO_KEY";
+  try {
+    const res = await fetch(
+      `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${key}&query=${encodeURIComponent(q)}&pageSize=12&dataType=${encodeURIComponent("Foundation,SR Legacy,Branded")}`,
+      { signal: AbortSignal.timeout(8000) }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    const foods: Array<Record<string, unknown>> = Array.isArray(data.foods) ? data.foods : [];
+    const round = (v: number | undefined) => (v == null ? undefined : Math.round(v * 10) / 10);
+    const out: FoodResult[] = [];
+    for (const f of foods) {
+      const nutr = (f.foodNutrients as Array<Record<string, unknown>>) ?? [];
+      const byId = (id: number) => { const n = nutr.find((x) => Number(x.nutrientId) === id); return n ? Number(n.value) : undefined; };
+      const cal = byId(1008); // Energy (kcal), per 100g
+      const name = String(f.description ?? "").trim();
+      if (cal == null || !name) continue;
+      const sodium = byId(1093);
+      out.push({
+        id: `usda:${f.fdcId}`, name, brand: String(f.brandOwner ?? f.brandName ?? "USDA").trim(),
+        basis: "100g", serving_size: "", calories: Math.round(cal),
+        protein_g: round(byId(1003)) ?? 0, carbs_g: round(byId(1005)) ?? 0, fat_g: round(byId(1004)) ?? 0,
+        fiber_g: round(byId(1079)), sugar_g: round(byId(2000)), saturated_fat_g: round(byId(1258)),
+        sodium_mg: sodium != null ? Math.round(sodium) : undefined,
+      });
+    }
+    return out;
+  } catch { return []; }
+}
+
 export async function GET(req: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -134,6 +167,16 @@ export async function GET(req: NextRequest) {
           return true;
         })
         .slice(0, 20);
+
+      // Densify thin Open Food Facts results with USDA FoodData Central.
+      if (results.length < 8) {
+        for (const u of await usdaSearch(q)) {
+          const key = `${u.brand}|${u.name}`.toLowerCase();
+          if (!seen.has(key)) { seen.add(key); results.push(u); }
+          if (results.length >= 20) break;
+        }
+      }
+
       await cacheSet(ck, results, 60 * 60 * 24 * 7); // searches: 7-day TTL
       return NextResponse.json({ results });
     }

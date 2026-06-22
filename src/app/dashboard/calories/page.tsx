@@ -869,6 +869,28 @@ export default function CaloriesPage() {
     else setSaving(false);
   };
 
+  // Copy the previous day's meals onto the day being viewed (same times).
+  const copyPreviousDay = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const prev = new Date(selectedDate); prev.setDate(prev.getDate() - 1);
+    const ps = new Date(prev); ps.setHours(0, 0, 0, 0);
+    const pe = new Date(prev); pe.setHours(23, 59, 59, 999);
+    const { data } = await supabase.from("meal_logs")
+      .select("name, calories, protein_g, carbs_g, fat_g, source, nutrition_meta, logged_at")
+      .eq("user_id", user.id).gte("logged_at", ps.toISOString()).lte("logged_at", pe.toISOString()).limit(100);
+    if (!data || data.length === 0) return;
+    setSaving(true);
+    const rows = data.map((r) => {
+      const t = new Date(r.logged_at);
+      const nd = new Date(selectedDate); nd.setHours(t.getHours(), t.getMinutes(), 0, 0);
+      return { user_id: user.id, name: r.name, calories: r.calories, protein_g: r.protein_g, carbs_g: r.carbs_g, fat_g: r.fat_g, source: r.source, nutrition_meta: r.nutrition_meta, logged_at: nd.toISOString() };
+    });
+    await supabase.from("meal_logs").insert(rows);
+    setSaving(false);
+    await loadLogs(selectedDate);
+  };
+
   // One-tap re-log of a recently eaten food.
   const relogRecent = async (r: MealLog) => {
     setSaving(true);
@@ -1125,7 +1147,10 @@ export default function CaloriesPage() {
             <div className="bg-card border border-border rounded-2xl text-center py-16">
               <p className="text-4xl mb-4">🍽️</p>
               <p className="text-text-secondary">{isToday ? "Nothing logged yet today." : `No meals logged on ${formatDate(selectedDate)}.`}</p>
-              {isToday && <button onClick={() => setActiveTab("camera")} className="mt-3 text-lime text-sm hover:text-lime-glow transition-colors">Take a photo or log manually →</button>}
+              <div className="flex flex-col items-center gap-2 mt-3">
+                <button onClick={() => setActiveTab("search")} className="text-lime text-sm hover:text-lime-glow transition-colors">Search, scan, or log a meal →</button>
+                <button onClick={copyPreviousDay} disabled={saving} className="text-text-muted text-xs hover:text-text-secondary transition-colors disabled:opacity-50">↧ Copy yesterday&apos;s meals</button>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
