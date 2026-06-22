@@ -49,6 +49,25 @@ exception when duplicate_object then null; end $$;
 create index if not exists idx_foods_user_lastused on public.foods (user_id, last_used desc);
 create unique index if not exists uq_foods_user_key on public.foods (user_id, lower(name), lower(coalesce(brand, '')));
 
+-- ── Saved meal templates (reusable crafted meals) ───────────────────────────
+create table if not exists public.meal_templates (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade not null,
+  name text not null,
+  calories int not null,
+  protein_g numeric default 0,
+  carbs_g numeric default 0,
+  fat_g numeric default 0,
+  nutrition_meta jsonb,
+  created_at timestamptz default now()
+);
+alter table public.meal_templates enable row level security;
+do $$ begin
+  create policy "own meal templates" on public.meal_templates for all
+    using (auth.uid() = user_id) with check (auth.uid() = user_id);
+exception when duplicate_object then null; end $$;
+create index if not exists idx_meal_templates_user on public.meal_templates (user_id, created_at desc);
+
 -- ── Atomic AI-quota increment (closes the read-then-write race) ──────────────
 -- Returns whether the request is allowed and the new monthly count. Resets the
 -- counter when a new month has started. SECURITY DEFINER so it runs with the

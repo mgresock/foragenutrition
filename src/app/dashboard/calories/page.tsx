@@ -4,7 +4,11 @@ import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ForageSpinner } from "@/components/ui/ForageSpinner";
 import { FoodSearchTab, type FoodLogEntry } from "@/components/calories/FoodSearchTab";
+import { computeTargets, goalFromGoals } from "@/lib/nutrition";
 import Link from "next/link";
+
+// Share of the daily calorie target per time-of-day slot (meal-time targets).
+const SLOT_FRACTION: Record<string, number> = { Morning: 0.30, Afternoon: 0.35, Evening: 0.30, Night: 0.05 };
 
 // datetime-local <input> value (local time) from a Date
 function toLocalInput(d: Date) {
@@ -677,6 +681,8 @@ export default function CaloriesPage() {
   const [logAt, setLogAt] = useState<string>(() => toLocalInput(new Date()));
   const [lastDeleted, setLastDeleted] = useState<MealLog | null>(null);
   const [recents, setRecents] = useState<MealLog[]>([]);
+  const [templates, setTemplates] = useState<MealLog[]>([]);
+  const [calorieTarget, setCalorieTarget] = useState(2600);
   const fileRef = useRef<HTMLInputElement>(null);
   const libraryRef = useRef<HTMLInputElement>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -741,6 +747,14 @@ export default function CaloriesPage() {
     setUserTier((profile?.subscription_tier as "free" | "pro") ?? "free");
     loadLogs(selectedDate);
     loadRecents(user.id);
+    loadTemplates(user.id);
+    // Personalized daily calorie target (for meal-time pacing).
+    const { data: ob } = await supabase.from("onboarding").select("*").eq("user_id", user.id).single();
+    const o = ob as Record<string, unknown> | null;
+    if (o) {
+      const t = computeTargets({ sex: o.sex as string, age: o.age as number, height_cm: o.height_cm as number, weight_kg: o.weight_kg as number, activity: o.activity_level as string, goal: goalFromGoals(o.goals) });
+      setCalorieTarget((o.daily_calorie_target as number) || t.calories);
+    }
   };
 
   // Distinct recently-logged foods for one-tap re-logging (last 21 days).
@@ -1039,6 +1053,17 @@ export default function CaloriesPage() {
     setComponents((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Reorder a crafted-meal part up/down.
+  const moveComponent = (index: number, dir: -1 | 1) => {
+    setComponents((prev) => {
+      const next = [...prev];
+      const j = index + dir;
+      if (j < 0 || j >= next.length) return prev;
+      [next[index], next[j]] = [next[j], next[index]];
+      return next;
+    });
+  };
+
   const saveMeal = async () => {
     if (components.length === 0) return;
     setSaving(true);
@@ -1052,6 +1077,29 @@ export default function CaloriesPage() {
     } else {
       setSaving(false);
     }
+  };
+
+  // Saved meal templates (reusable crafted meals). Graceful if table absent.
+  const loadTemplates = async (userId: string) => {
+    const { data } = await supabase.from("meal_templates")
+      .select("id, name, calories, protein_g, carbs_g, fat_g, nutrition_meta")
+      .eq("user_id", userId).order("created_at", { ascending: false }).limit(20);
+    if (data) setTemplates(data as MealLog[]);
+  };
+  const saveTemplate = async () => {
+    if (components.length === 0) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const agg = aggregateComponents(components);
+    const name = mealName.trim() || (components.length === 1 ? components[0].name : `${components[0].name} + ${components.length - 1} more`);
+    const { error } = await supabase.from("meal_templates").insert({
+      user_id: user.id, name, calories: agg.calories, protein_g: agg.protein_g, carbs_g: agg.carbs_g, fat_g: agg.fat_g, nutrition_meta: agg.nutrition_meta,
+    });
+    if (!error) loadTemplates(user.id);
+  };
+  const loadTemplate = (t: MealLog) => {
+    setComponents(t.nutrition_meta?.components ?? []);
+    setMealName(t.name);
   };
 
   const builderTotals = aggregateComponents(components);
@@ -1168,9 +1216,17 @@ export default function CaloriesPage() {
                         breakdown ›
                       </button>
                     )}
-                    <span className="num text-text-muted text-xs font-mono">
-                      {entries.reduce((s, e) => s + e.calories, 0)} kcal
-                    </span>
+                    {(() => {
+                      const slotCals = entries.reduce((s, e) => s + e.calories, 0);
+                      const slotTarget = Math.round(calorieTarget * (SLOT_FRACTION[label] ?? 0.3));
+                      const over = slotCals > slotTarget * 1.15;
+                      return (
+                        <span className="num text-xs font-mono" title={`${label} target ≈ ${slotTarget} kcal`}>
+                          <span className={over ? "text-amber-app" : "text-text-muted"}>{slotCals}</span>
+                          <span className="text-text-muted/60"> / {slotTarget}</span>
+                        </span>
+                      );
+                    })()}
                   </div>
                   <div className="bg-card border border-border rounded-2xl overflow-hidden">
                     {entries.map((entry, i) => (
@@ -1478,6 +1534,22 @@ export default function CaloriesPage() {
             <p className="text-text-muted text-xs leading-relaxed">Craft a full meal from individual parts. Add each food with its amount — enter macros yourself or let AI estimate them. You&apos;ll see the combined protein &amp; macro breakdown for every part, saved together as one meal you can reopen anytime.</p>
           </div>
 
+          {/* Saved templates — tap to load into the builder */}
+          {templates.length > 0 && components.length === 0 && (
+            <div>
+              <p className="text-text-muted text-[10px] uppercase tracking-widest font-mono mb-2 px-1">Your templates · tap to load</p>
+              <div className="flex flex-wrap gap-2">
+                {templates.map((t) => (
+                  <button key={t.id} onClick={() => loadTemplate(t)}
+                    className="flex items-center gap-2 bg-card border border-border rounded-xl px-3 py-2 hover:border-lime/40 hover:bg-lime/5 transition-all">
+                    <span className="text-text-primary text-xs font-medium max-w-[160px] truncate">{t.name}</span>
+                    <span className="num text-lime text-xs font-display font-bold">{t.calories}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Live running total */}
           {components.length > 0 && (
             <div className="bg-lime/5 border border-lime/20 rounded-2xl p-5">
@@ -1537,6 +1609,12 @@ export default function CaloriesPage() {
                     </div>
                   </div>
                   <span className="num font-display font-bold text-text-primary text-sm flex-shrink-0">{Math.round(c.calories)}</span>
+                  <div className="flex flex-col flex-shrink-0">
+                    <button onClick={() => moveComponent(i, -1)} disabled={i === 0} aria-label="Move part up"
+                      className="text-text-muted hover:text-text-primary disabled:opacity-20 text-[10px] leading-none p-0.5">▲</button>
+                    <button onClick={() => moveComponent(i, 1)} disabled={i === components.length - 1} aria-label="Move part down"
+                      className="text-text-muted hover:text-text-primary disabled:opacity-20 text-[10px] leading-none p-0.5">▼</button>
+                  </div>
                   <button onClick={() => removeComponent(i)} aria-label="Remove part"
                     className="w-6 h-6 rounded-lg bg-surface border border-border flex items-center justify-center text-text-muted hover:text-red-400 hover:border-red-400/30 text-xs flex-shrink-0">✕</button>
                 </div>
@@ -1594,6 +1672,10 @@ export default function CaloriesPage() {
               <button onClick={saveMeal} disabled={saving}
                 className="w-full bg-lime text-canvas font-display font-bold py-3.5 rounded-xl uppercase tracking-wider hover:bg-lime-glow transition-all shadow-lime-sm disabled:opacity-40 disabled:cursor-not-allowed">
                 {saving ? "Saving…" : `Save Meal · ${components.length} part${components.length !== 1 ? "s" : ""}`}
+              </button>
+              <button onClick={saveTemplate} disabled={saving}
+                className="w-full bg-surface border border-border text-text-secondary rounded-xl py-2.5 text-sm hover:border-lime/40 hover:text-text-primary transition-all disabled:opacity-40">
+                ☆ Save as reusable template
               </button>
             </div>
           )}
