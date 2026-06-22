@@ -397,3 +397,16 @@ USDA_FDC_API_KEY          (food-search USDA fallback — optional; falls back to
 - Pages: `/dashboard/macros` (Macro Calculator), `/dashboard/insights` (trends + achievements), `/dashboard/settings/account` (export + delete).
 - Routes: `/api/food-search` (OFF + USDA), `/api/recompute-targets` (adaptive, self + weekly cron), `/api/recipe-import` (URL → ingredients/macros), `/api/account/export`, `/api/account/delete`.
 - Libs: `src/lib/nutrition.ts` (Mifflin-St Jeor TDEE + adaptive), `src/lib/cache.ts` (Upstash read-through). Migrations: `db/feature-tables.sql`.
+
+## Error Tracking (Sentry)
+- Wired via `@sentry/nextjs` (wizard). Config: `sentry.server.config.ts`, `sentry.edge.config.ts`, `src/instrumentation-client.ts`, `src/instrumentation.ts` (`onRequestError` auto-captures route errors); `next.config.ts` wrapped in `withSentryConfig` (org `forage-nutrition`, project `javascript-nextjs`, `tunnelRoute: "/monitoring"`).
+- DSN is hardcoded (public, safe to commit). **`.env.sentry-build-plugin` holds `SENTRY_AUTH_TOKEN` (secret) — gitignored, never commit.** Source-map upload needs that token in CI/Vercel.
+- Tuned for a health app: `tracesSampleRate: 0.2`, **`sendDefaultPii: false`** (don't send user PII to a third party).
+- Build "Compiled with warnings" (source-map step) is normal without the auth token.
+
+## Standing manual setup (NOT yet applied — code is ready)
+1. Supabase SQL, in order: `db/security-hardening.sql` (own-row reads + locked billing cols), `db/performance-indexes.sql`, `db/feature-tables.sql` (adaptive targets, weight_logs, foods, `increment_ai_usage` RPC).
+2. Vercel env: `UPSTASH_REDIS_REST_URL/TOKEN`, `CRON_SECRET`, optional `USDA_FDC_API_KEY`, Sentry `SENTRY_AUTH_TOKEN`/`SENTRY_ORG`/`SENTRY_PROJECT`.
+
+## Deferred features (not built)
+Push reminders (service worker + VAPID + `push_subscriptions` + cron send), meal-time targets, drag-to-reorder builder parts, swipe-to-edit/delete, pull-to-refresh, full saved-meal templates, meal-prep planner.

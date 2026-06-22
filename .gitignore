@@ -34,3 +34,6 @@ android/
 # Local secrets / junk — never commit
 stripe_backup_code.txt
 .claire/
+
+# Sentry Config File
+.env.sentry-build-plugin
