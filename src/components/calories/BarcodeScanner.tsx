@@ -52,7 +52,7 @@ export function BarcodeScanner({ onDetect, onClose }: { onDetect: (code: string)
     <div className="fixed inset-0 z-[60] bg-black flex flex-col">
       <div className="flex items-center justify-between px-5 py-4" style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 12px)" }}>
         <span className="font-display font-bold text-text-primary text-sm uppercase tracking-wider">Scan Barcode</span>
-        <button onClick={onClose} className="w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center text-text-secondary hover:text-text-primary text-sm">✕</button>
+        <button onClick={onClose} aria-label="Close scanner" className="w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center text-text-secondary hover:text-text-primary text-sm">✕</button>
       </div>
 
       <div className="relative flex-1 flex items-center justify-center overflow-hidden">

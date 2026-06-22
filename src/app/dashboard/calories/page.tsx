@@ -308,7 +308,7 @@ function EntryDetailModal({ entry, onClose, onDelete, onUpdate }: { entry: MealL
             <button onClick={startEdit} title="Edit" className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center text-text-muted hover:text-lime transition-colors">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 20 20"><path d="M13.5 3.5l3 3L7 16l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/></svg>
             </button>
-            <button onClick={onClose} className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center text-text-muted hover:text-text-primary transition-colors text-sm">✕</button>
+            <button onClick={onClose} aria-label="Close" className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center text-text-muted hover:text-text-primary transition-colors text-sm">✕</button>
           </div>
         </div>
 
@@ -536,7 +536,7 @@ function MealGroupModal({ group, onClose, onSelectEntry }: { group: MealGroup; o
             </div>
             <p className="text-text-muted text-xs mt-1">{group.entries.length} item{group.entries.length !== 1 ? "s" : ""} · tap any to see full detail</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center text-text-muted hover:text-text-primary text-sm flex-shrink-0">✕</button>
+          <button onClick={onClose} aria-label="Close" className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center text-text-muted hover:text-text-primary text-sm flex-shrink-0">✕</button>
         </div>
 
         {/* Meal totals */}
@@ -1066,12 +1066,12 @@ export default function CaloriesPage() {
 
       {/* Date navigation */}
       <div className="flex items-center justify-between gap-4 mb-5">
-        <button onClick={goToPrevDay} className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-text-muted hover:text-text-primary hover:border-border-bright transition-all text-sm">‹</button>
+        <button onClick={goToPrevDay} aria-label="Previous day" className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-text-muted hover:text-text-primary hover:border-border-bright transition-all text-sm">‹</button>
         <div className="flex-1 text-center">
           <p className="font-display font-bold text-text-primary text-sm">{formatDate(selectedDate)}</p>
           {!isToday && <p className="text-text-muted text-xs mt-0.5">{selectedDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>}
         </div>
-        <button onClick={goToNextDay} disabled={isToday}
+        <button onClick={goToNextDay} disabled={isToday} aria-label="Next day"
           className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-text-muted hover:text-text-primary hover:border-border-bright transition-all text-sm disabled:opacity-30 disabled:cursor-not-allowed">›</button>
       </div>
 
@@ -1199,7 +1199,7 @@ export default function CaloriesPage() {
                             <p className="num font-display font-bold text-text-primary text-lg leading-none">{entry.calories}</p>
                             <p className="text-text-muted text-xs mt-0.5">kcal</p>
                           </div>
-                          <button onClick={(e) => { e.stopPropagation(); removeEntry(entry.id); }}
+                          <button onClick={(e) => { e.stopPropagation(); removeEntry(entry.id); }} aria-label={`Remove ${entry.name}`}
                             className="opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-lg bg-surface border border-border flex items-center justify-center text-text-muted hover:text-red-400 hover:border-red-400/30 text-xs">
                             ✕
                           </button>
@@ -1537,7 +1537,7 @@ export default function CaloriesPage() {
                     </div>
                   </div>
                   <span className="num font-display font-bold text-text-primary text-sm flex-shrink-0">{Math.round(c.calories)}</span>
-                  <button onClick={() => removeComponent(i)}
+                  <button onClick={() => removeComponent(i)} aria-label="Remove part"
                     className="w-6 h-6 rounded-lg bg-surface border border-border flex items-center justify-center text-text-muted hover:text-red-400 hover:border-red-400/30 text-xs flex-shrink-0">✕</button>
                 </div>
               ))}
