@@ -1,5 +1,6 @@
 {
   "crons": [
-    { "path": "/api/recompute-targets", "schedule": "0 9 * * 1" }
+    { "path": "/api/recompute-targets", "schedule": "0 9 * * 1" },
+    { "path": "/api/push/send", "schedule": "0 1 * * *" }
   ]
 }

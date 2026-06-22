@@ -49,6 +49,23 @@ exception when duplicate_object then null; end $$;
 create index if not exists idx_foods_user_lastused on public.foods (user_id, last_used desc);
 create unique index if not exists uq_foods_user_key on public.foods (user_id, lower(name), lower(coalesce(brand, '')));
 
+-- ── Web-push subscriptions (reminders) ──────────────────────────────────────
+create table if not exists public.push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade not null,
+  endpoint text not null,
+  p256dh text not null,
+  auth text not null,
+  created_at timestamptz default now(),
+  unique (user_id, endpoint)
+);
+alter table public.push_subscriptions enable row level security;
+do $$ begin
+  create policy "own push subs" on public.push_subscriptions for all
+    using (auth.uid() = user_id) with check (auth.uid() = user_id);
+exception when duplicate_object then null; end $$;
+create index if not exists idx_push_subs_user on public.push_subscriptions (user_id);
+
 -- ── Saved meal templates (reusable crafted meals) ───────────────────────────
 create table if not exists public.meal_templates (
   id uuid primary key default gen_random_uuid(),

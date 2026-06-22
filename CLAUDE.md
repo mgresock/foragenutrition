@@ -408,5 +408,9 @@ USDA_FDC_API_KEY          (food-search USDA fallback — optional; falls back to
 1. Supabase SQL, in order: `db/security-hardening.sql` (own-row reads + locked billing cols), `db/performance-indexes.sql`, `db/feature-tables.sql` (adaptive targets, weight_logs, foods, `increment_ai_usage` RPC).
 2. Vercel env: `UPSTASH_REDIS_REST_URL/TOKEN`, `CRON_SECRET`, optional `USDA_FDC_API_KEY`, Sentry `SENTRY_AUTH_TOKEN`/`SENTRY_ORG`/`SENTRY_PROJECT`.
 
+## Push Reminders (web-push)
+- `public/sw.js` (push + notificationclick), `src/lib/push.ts` (client enable/subscribe), `/api/push/subscribe` (store sub), `/api/push/send` (daily cron, CRON_SECRET-gated, nudges users who haven't logged today; cleans dead subs). Opt-in UI: `PushOptIn` on `/dashboard/settings/account`. Cron in `vercel.json` (`0 1 * * *`). Table `push_subscriptions` in `db/feature-tables.sql`.
+- Needs env: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (same as public), `VAPID_SUBJECT`. No-ops gracefully without them.
+
 ## Deferred features (not built)
-Push reminders (service worker + VAPID + `push_subscriptions` + cron send), meal-time targets, drag-to-reorder builder parts, swipe-to-edit/delete, pull-to-refresh, full saved-meal templates, meal-prep planner.
+Swipe-to-edit/delete, pull-to-refresh, meal-prep planner.

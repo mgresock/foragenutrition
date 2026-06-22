@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ForageSpinner } from "@/components/ui/ForageSpinner";
+import { PushOptIn } from "@/components/settings/PushOptIn";
 
 export default function AccountPage() {
   const router = useRouter();
@@ -27,7 +28,9 @@ export default function AccountPage() {
     <div className="px-5 sm:px-8 py-8 pb-24 lg:pb-8 max-w-2xl">
       <p className="text-lime text-xs font-mono uppercase tracking-[0.2em] mb-1.5">Settings</p>
       <h1 className="font-display font-black text-4xl uppercase tracking-tight leading-[0.95] text-text-primary">Data &amp; Privacy</h1>
-      <p className="text-text-secondary mt-2 mb-8">Export everything we hold about you, or permanently delete your account.</p>
+      <p className="text-text-secondary mt-2 mb-8">Reminders, export everything we hold about you, or permanently delete your account.</p>
+
+      <PushOptIn />
 
       {/* Export */}
       <div className="bg-card border border-border rounded-2xl p-6 mb-5">
