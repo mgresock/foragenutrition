@@ -87,4 +87,10 @@ test("macro calculator computes a personalized daily target", async ({ page }) =
   await expect(page.getByText("Daily Target")).toBeVisible();
   await expect(page.getByText(/kcal/).first()).toBeVisible();
   await expect(page.getByRole("button", { name: /Apply to Profile|Applied/ })).toBeVisible();
+
+  // Unit switching: metric (kg/cm) and imperial (lbs/ft) both recompute without error.
+  await page.getByRole("button", { name: /kg \/ cm/ }).click();
+  await expect(page.getByText(/kcal/).first()).toBeVisible();
+  await page.getByRole("button", { name: /lbs \/ ft/ }).click();
+  await expect(page.getByText(/kcal/).first()).toBeVisible();
 });

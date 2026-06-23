@@ -411,7 +411,12 @@ USDA_FDC_API_KEY          (food-search USDA fallback — optional; falls back to
 ## Recent feature surfaces (routes/pages)
 - Pages: `/dashboard/macros` (Macro Calculator), `/dashboard/insights` (trends + achievements), `/dashboard/settings/account` (export + delete).
 - Routes: `/api/food-search` (OFF + USDA), `/api/recompute-targets` (adaptive, self + weekly cron), `/api/recipe-import` (URL → ingredients/macros), `/api/account/export`, `/api/account/delete`.
-- Libs: `src/lib/nutrition.ts` (Mifflin-St Jeor TDEE + adaptive), `src/lib/cache.ts` (Upstash read-through). Migrations: `db/feature-tables.sql`.
+- Libs: `src/lib/nutrition.ts` (Mifflin-St Jeor TDEE + adaptive), `src/lib/cache.ts` (Upstash read-through), `src/lib/units.ts` (lbs↔kg, ft/in↔cm conversions). Migrations: `db/feature-tables.sql`.
+
+## Units (imperial / metric)
+- **Storage + all computation is metric** (`onboarding.weight_kg` / `height_cm`; `nutrition.ts` is metric-only). `onboarding.unit_pref` (`'imperial'|'metric'`) persists the user's choice.
+- `src/lib/units.ts` centralizes conversions: `lbToKg`/`kgToLb`, `ftInToCm`/`cmToFtIn`, `normalizeUnit`, `metricToInputs` (metric → per-unit input strings).
+- Unit toggle (lbs/ft ↔ kg/cm) is on **onboarding/profile**, **settings/profile** (`ProfileForm`), and the **Macro Calculator** (`/dashboard/macros`). The calculator toggle converts in place (body stays the same) and feeds metric into `computeTargets`; Apply writes metric + `unit_pref`. E2E (`meal-builder.spec.ts` macro test) exercises both toggles.
 
 ## Error Tracking (Sentry)
 - Wired via `@sentry/nextjs` (wizard). Config: `sentry.server.config.ts`, `sentry.edge.config.ts`, `src/instrumentation-client.ts`, `src/instrumentation.ts` (`onRequestError` auto-captures route errors); `next.config.ts` wrapped in `withSentryConfig` (org `forage-nutrition`, project `javascript-nextjs`, `tunnelRoute: "/monitoring"`).
