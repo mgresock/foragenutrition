@@ -107,7 +107,7 @@ export function BillingContent({ tier: initialTier, aiUsed: initialAiUsed }: Bil
           </div>
           <div className="h-1.5 bg-canvas rounded-full overflow-hidden">
             <div className="h-full rounded-full transition-all"
-              style={{ width: `${aiPct}%`, background: aiPct >= 100 ? "#ef4444" : aiPct >= 80 ? "#FF9F0A" : "#34C759" }} />
+              style={{ width: `${aiPct}%`, background: aiPct >= 100 ? "#ef4444" : aiPct >= 80 ? "#FF9F0A" : "#62e23f" }} />
           </div>
           {aiRemaining === 0 && (
             <p className="text-red-400 text-xs mt-2">Limit reached — upgrade to keep using AI features</p>

@@ -11,7 +11,7 @@ export async function GET() {
         style={{
           width: size,
           height: size,
-          background: "#34C759",
+          background: "#62e23f",
           borderRadius: 232,
           display: "flex",
           alignItems: "center",

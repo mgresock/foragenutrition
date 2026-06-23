@@ -18,28 +18,32 @@ When this conversation is compacted, **always update this CLAUDE.md file first**
 - **Stripe** — subscription billing (`stripe` npm package); webhooks update `profiles.subscription_tier`
 - **Tailwind CSS** — custom dark design system (see below)
 
-## Design System
+## Design System — "Editorial Ledger" (dark broadsheet + acid lime)
+Aesthetic: Bloomberg terminal × Kinfolk magazine × a powerlifter's training log. Sharp corners everywhere, hairline borders (no soft shadows/elevation, no glassmorphism except the mobile sticky header), Archivo Black numerals + uppercase micro-labels, tabular alignment.
 ```
-Background:   #0c0e09   (canvas)
-Surface:      #151810
-Card:         #1e2218
-Border:       subtle dark
-Lime:         #b6f040   (primary accent — CTAs, highlights, success)
-Amber:        #f0a030   (warnings, carbs)
-Cyan:         #40c8f0   (info, fats, hydration)
-Text Primary: #f0ece0
-Text Secondary: #8a9070
-Text Muted:   #4a5438
+Background (canvas):  #0a0d08   (near-black paper, green undertone)
+Surface:              #10140d
+Card:                 #161a10
+Border (hairline):    #282c20
+Border-bright:        #3c4230
+Lime (acid accent):   #62e23f   (CTAs, rings, highlights, success)  · dim #3f9e2b · glow #7df257
+Amber (carbs/warn):   #FF9F0A
+Cyan (fats/info):     #32ADE6
+Text Primary (ink):   #f2f4e8   (warm off-white)
+Text Secondary:       #969c84
+Text Muted:           #565c46
 ```
-
-Tailwind config keys: `canvas`, `surface`, `card`, `border`, `border-bright`, `lime`, `amber`, `cyan`, `text-primary`, `text-secondary`, `text-muted`
+Tailwind config keys: `canvas`, `surface`, `card`, `border`, `border-bright`, `lime`, `amber`, `cyan`, `text-primary`, `text-secondary`, `text-muted`.
+- **`borderRadius` is globally flattened to `0`** in `tailwind.config.ts` — every `rounded-*` (incl. `rounded-full`) renders sharp. Circular progress rings are SVG stroke-based, so unaffected. Avatars/pips render square (on-brand). If you ever need a real circle, use inline `style={{ borderRadius: '50%' }}` (the range-slider thumb does this in `globals.css`).
+- **`shadow-card`/`shadow-card-hover` are `none`** (flat broadsheet); only `shadow-lime-glow`/`lime-sm` remain, for primary CTAs.
+- Hardcoded data-viz colors (ring/chart strokes) use the literal acid lime `#62e23f` (was `#34C759`). The old brand greens `#34C759`/`#30D158`/`#248A3D` and grays `#2C2C2E`/`#1C1C1E`/`#3A3A3C` were swept out of `src/`.
 
 ## Fonts
-- **Syne** — `font-display` (headings, brand, bold UI)
-- **Plus Jakarta Sans** — body text (default)
-- **DM Mono** — `font-mono` (numbers, codes)
+- **Archivo Black** — `font-display` (headlines, big numerals, section labels — heavy, uppercase feel)
+- **Hind** — `font-body` (default body text)
+- **DM Mono** — `font-mono` (micro-labels, tabular numbers, codes)
 
-Loaded via Google Fonts link in `src/app/layout.tsx`.
+Loaded via Google Fonts `<link>` in `src/app/layout.tsx` **and** an `@import` in `globals.css` (belt-and-suspenders). `--font-display`/`--font-body`/`--font-mono` CSS vars in `globals.css` mirror the Tailwind `fontFamily` keys.
 
 ## Supabase Schema (key tables)
 

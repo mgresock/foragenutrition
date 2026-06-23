@@ -22,10 +22,10 @@ export default function AuthPage() {
         >
           <defs>
             <pattern id="contour" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
-              <ellipse cx="60" cy="60" rx="55" ry="40" fill="none" stroke="#34C759" strokeWidth="0.6" />
-              <ellipse cx="60" cy="60" rx="42" ry="28" fill="none" stroke="#34C759" strokeWidth="0.6" />
-              <ellipse cx="60" cy="60" rx="29" ry="17" fill="none" stroke="#34C759" strokeWidth="0.6" />
-              <ellipse cx="60" cy="60" rx="16" ry="8" fill="none" stroke="#34C759" strokeWidth="0.6" />
+              <ellipse cx="60" cy="60" rx="55" ry="40" fill="none" stroke="#62e23f" strokeWidth="0.6" />
+              <ellipse cx="60" cy="60" rx="42" ry="28" fill="none" stroke="#62e23f" strokeWidth="0.6" />
+              <ellipse cx="60" cy="60" rx="29" ry="17" fill="none" stroke="#62e23f" strokeWidth="0.6" />
+              <ellipse cx="60" cy="60" rx="16" ry="8" fill="none" stroke="#62e23f" strokeWidth="0.6" />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#contour)" />
@@ -34,7 +34,7 @@ export default function AuthPage() {
         {/* Radial lime bloom */}
         <div
           className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, rgba(52,199,89,0.06) 0%, transparent 65%)" }}
+          style={{ background: "radial-gradient(circle, rgba(98,226,63,0.06) 0%, transparent 65%)" }}
         />
 
         {/* Grain texture overlay */}

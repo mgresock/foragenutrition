@@ -24,12 +24,12 @@ function LogoMark({ size }: { size: number }) {
       xmlns="http://www.w3.org/2000/svg"
     >
       {/* Outer ring — subtle */}
-      <circle cx="16" cy="16" r="15" stroke="#34C759" strokeWidth="1" strokeOpacity="0.3" />
+      <circle cx="16" cy="16" r="15" stroke="#62e23f" strokeWidth="1" strokeOpacity="0.3" />
 
       {/* Left leaf — curves from stem up-left */}
       <path
         d="M16 26 C16 26 7 21 7 13 C7 8.5 10 6 16 9"
-        stroke="#34C759"
+        stroke="#62e23f"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -38,7 +38,7 @@ function LogoMark({ size }: { size: number }) {
       {/* Right leaf — shorter, curves up-right, offset higher */}
       <path
         d="M16 20 C16 20 22 16.5 22 11 C22 8 20 6.5 16 9"
-        stroke="#34C759"
+        stroke="#62e23f"
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -48,13 +48,13 @@ function LogoMark({ size }: { size: number }) {
       {/* Stem */}
       <path
         d="M16 9 L16 26"
-        stroke="#34C759"
+        stroke="#62e23f"
         strokeWidth="2"
         strokeLinecap="round"
       />
 
       {/* Root dot */}
-      <circle cx="16" cy="26" r="1.5" fill="#34C759" />
+      <circle cx="16" cy="26" r="1.5" fill="#62e23f" />
     </svg>
   );
 }

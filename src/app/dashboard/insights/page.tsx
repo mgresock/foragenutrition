@@ -137,7 +137,7 @@ export default function InsightsPage() {
           {weeks.map((w) => (
             <div key={w.label} className="flex-1 flex flex-col items-center gap-1">
               <div className="w-full bg-canvas rounded-md overflow-hidden flex items-end" style={{ height: "100%" }}>
-                <div className="w-full rounded-md transition-all" style={{ height: `${Math.max(4, w.pct)}%`, background: w.pct >= 80 ? "#34C759" : w.pct >= 50 ? "#FF9F0A" : "#3A3A3C" }} />
+                <div className="w-full rounded-md transition-all" style={{ height: `${Math.max(4, w.pct)}%`, background: w.pct >= 80 ? "#62e23f" : w.pct >= 50 ? "#FF9F0A" : "#3c4230" }} />
               </div>
               <span className="text-text-muted text-[9px] font-mono">{w.label}</span>
             </div>

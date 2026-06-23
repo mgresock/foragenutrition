@@ -9,15 +9,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        canvas:  "#000000",
-        surface: "#111111",
-        card:    "#1C1C1E",
-        border:       "#2C2C2E",
-        "border-bright": "#3A3A3C",
+        // Editorial Ledger palette — dark broadsheet paper + acid lime
+        canvas:  "#0a0d08",   // paper: near-black with green undertone
+        surface: "#10140d",
+        card:    "#161a10",
+        border:       "#282c20",   // hairline
+        "border-bright": "#3c4230",
         lime: {
-          DEFAULT: "#34C759",
-          dim:     "#248A3D",
-          glow:    "#30D158",
+          DEFAULT: "#62e23f",   // acid lime accent
+          dim:     "#3f9e2b",
+          glow:    "#7df257",
         },
         amber: {
           app: "#FF9F0A",
@@ -28,15 +29,29 @@ const config: Config = {
           dim: "#0071A4",
         },
         text: {
-          primary:   "#F2F2F7",
-          secondary: "#8E8E93",
-          muted:     "#48484A",
+          primary:   "#f2f4e8",   // warm off-white ink
+          secondary: "#969c84",
+          muted:     "#565c46",
         },
       },
       fontFamily: {
-        display: ["Archivo", "-apple-system", "BlinkMacSystemFont", "Inter", "Segoe UI", "sans-serif"],
-        body:    ["-apple-system", "BlinkMacSystemFont", "Inter", "Segoe UI", "sans-serif"],
+        display: ["Archivo Black", "Archivo", "-apple-system", "Segoe UI", "sans-serif"],
+        body:    ["Hind", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
         mono:    ["DM Mono", "ui-monospace", "monospace"],
+      },
+      // Editorial Ledger: sharp corners EVERYWHERE — panels, buttons, inputs,
+      // avatars, pips. Matches the broadsheet reference (square avatar + bars).
+      // Circular SVG progress rings are stroke-based, so unaffected by this.
+      borderRadius: {
+        none: "0",
+        sm:   "0",
+        DEFAULT: "0",
+        md:   "0",
+        lg:   "0",
+        xl:   "0",
+        "2xl": "0",
+        "3xl": "0",
+        full: "0",
       },
       backgroundImage: {
         "grid-subtle":
@@ -66,10 +81,12 @@ const config: Config = {
         },
       },
       boxShadow: {
-        "lime-glow":  "0 0 30px rgba(52,199,89,0.22)",
-        "lime-sm":    "0 0 12px rgba(52,199,89,0.18)",
-        card:         "0 4px 24px rgba(0,0,0,0.6)",
-        "card-hover": "0 8px 40px rgba(0,0,0,0.7)",
+        // Editorial Ledger: flat broadsheet — no elevation, hairline borders do
+        // the separating. Keep the acid-lime glow on primary CTAs (per reference).
+        "lime-glow":  "0 0 28px rgba(98,226,63,0.30)",
+        "lime-sm":    "0 0 12px rgba(98,226,63,0.22)",
+        card:         "none",
+        "card-hover": "none",
       },
     },
   },

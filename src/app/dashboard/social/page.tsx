@@ -77,7 +77,7 @@ function FriendCard({ f }: { f: FriendProgress }) {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="text-text-muted text-[10px] w-12 flex-shrink-0">Calories</span>
-            <GoalBar value={f.today.calories} max={CALORIE_GOAL} color="#34C759" />
+            <GoalBar value={f.today.calories} max={CALORIE_GOAL} color="#62e23f" />
             <span className="num text-lime text-[10px] font-mono w-14 text-right flex-shrink-0">
               {f.today.calories}<span className="text-text-muted">/{CALORIE_GOAL}</span>
             </span>

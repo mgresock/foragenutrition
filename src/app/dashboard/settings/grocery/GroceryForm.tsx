@@ -80,7 +80,7 @@ export function GroceryForm({ userId, initialZip, initialBudget }: GroceryFormPr
             </div>
             <input type="range" min={10} max={500} step={5} value={budget} onChange={(e) => setBudget(Number(e.target.value))}
               className="w-full"
-              style={{ background: `linear-gradient(to right, #34C759 0%, #34C759 ${((budget - 10) / 490) * 100}%, #2C2C2E ${((budget - 10) / 490) * 100}%, #2C2C2E 100%)` }} />
+              style={{ background: `linear-gradient(to right, #62e23f 0%, #62e23f ${((budget - 10) / 490) * 100}%, #282c20 ${((budget - 10) / 490) * 100}%, #282c20 100%)` }} />
             <div className="flex gap-2 flex-wrap">
               {QUICK_PICKS.map((v) => (
                 <button key={v} onClick={() => { setBudget(v); setNoBudget(false); }}
