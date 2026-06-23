@@ -115,7 +115,7 @@ function MacroRing({ protein, carbs, fat }: { protein: number; carbs: number; fa
     <svg width="128" height="128" viewBox="0 0 100 100" className="-rotate-90">
       <circle cx="50" cy="50" r="40" fill="none" stroke="#1a1f12" strokeWidth="12" />
       {/* protein - lime */}
-      <circle cx="50" cy="50" r="40" fill="none" stroke="#62e23f" strokeWidth="12"
+      <circle cx="50" cy="50" r="40" fill="none" stroke="#2f9e44" strokeWidth="12"
         strokeDasharray={`${Math.max(0, pLen - gap)} ${C - Math.max(0, pLen - gap)}`}
         strokeDashoffset="0" strokeLinecap="round" />
       {/* carbs - amber */}
@@ -515,7 +515,7 @@ function EntryDetailModal({ entry, onClose, onDelete, onUpdate }: { entry: MealL
   );
 }
 
-const ITEM_COLORS = ["#62e23f", "#32ADE6", "#FF9F0A", "#a78bfa", "#f472b6", "#34d399", "#fb923c"];
+const ITEM_COLORS = ["#2f9e44", "#32ADE6", "#FF9F0A", "#a78bfa", "#f472b6", "#34d399", "#fb923c"];
 
 interface MealGroup { label: string; emoji: string; entries: MealLog[]; }
 
@@ -1233,9 +1233,9 @@ export default function CaloriesPage() {
                       <div key={entry.id}
                         onClick={() => entries.length >= 2 ? setSelectedGroup({ label, emoji, entries }) : setSelectedEntry(entry)}
                         className={`relative flex items-center gap-4 p-4 group transition-all cursor-pointer hover:bg-surface/50 ${i < entries.length - 1 ? "border-b border-border" : ""} ${savedId === entry.id ? "bg-lime/5" : ""}`}
-                        style={savedId === entry.id ? { boxShadow: "inset 0 0 0 1px rgba(98,226,63,0.3)" } : undefined}>
+                        style={savedId === entry.id ? { boxShadow: "inset 0 0 0 1px rgba(47,158,68,0.3)" } : undefined}>
                         <div className="absolute left-0 top-3 bottom-3 w-0.5 rounded-full"
-                          style={{ background: entry.protein_g >= entry.carbs_g && entry.protein_g >= entry.fat_g ? "#62e23f" : entry.carbs_g >= entry.fat_g ? "#FF9F0A" : "#32ADE6" }} />
+                          style={{ background: entry.protein_g >= entry.carbs_g && entry.protein_g >= entry.fat_g ? "#2f9e44" : entry.carbs_g >= entry.fat_g ? "#FF9F0A" : "#32ADE6" }} />
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs flex-shrink-0 ml-2 ${savedId === entry.id ? "bg-lime text-canvas border border-lime" : entry.source === "ai_photo" || entry.source === "ai_describe" || entry.source === "ai_brand" ? "bg-lime/10 text-lime border border-lime/20" : "bg-surface text-text-muted border border-border"}`}>
                           {savedId === entry.id ? "✓" : entry.source.startsWith("ai") ? "AI" : "M"}
                         </div>

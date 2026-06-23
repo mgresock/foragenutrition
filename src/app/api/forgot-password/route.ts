@@ -106,7 +106,7 @@ function resetEmailHtml(firstName: string, resetLink: string): string {
             <td align="center" style="padding-bottom:32px;">
               <table cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="background:#62e23f;border-radius:16px;width:48px;height:48px;text-align:center;vertical-align:middle;">
+                  <td style="background:#2f9e44;border-radius:16px;width:48px;height:48px;text-align:center;vertical-align:middle;">
                     <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:10px auto 0;">
                       <path d="M16 26 C16 26 7 21 7 13 C7 8.5 10 6 16 9" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
                       <path d="M16 20 C16 20 22 16.5 22 11 C22 8 20 6.5 16 9" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.85"/>
@@ -124,7 +124,7 @@ function resetEmailHtml(firstName: string, resetLink: string): string {
 
           <!-- Card -->
           <tr>
-            <td style="background:#161a10;border:1px solid #282c20;border-radius:20px;padding:40px 36px;">
+            <td style="background:#1b1b1b;border:1px solid #2b2b2b;border-radius:20px;padding:40px 36px;">
 
               <!-- Lock icon -->
               <table cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
@@ -147,7 +147,7 @@ function resetEmailHtml(firstName: string, resetLink: string): string {
                 <tr>
                   <td align="center">
                     <a href="${resetLink}"
-                       style="display:inline-block;background:#62e23f;color:#000000;font-size:15px;font-weight:700;text-decoration:none;padding:14px 36px;border-radius:12px;letter-spacing:0.5px;">
+                       style="display:inline-block;background:#2f9e44;color:#000000;font-size:15px;font-weight:700;text-decoration:none;padding:14px 36px;border-radius:12px;letter-spacing:0.5px;">
                       Reset Password →
                     </a>
                   </td>
@@ -155,7 +155,7 @@ function resetEmailHtml(firstName: string, resetLink: string): string {
               </table>
 
               <!-- Expiry note -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="background:#0A0A0A;border:1px solid #282c20;border-radius:12px;padding:0;margin-bottom:24px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#0A0A0A;border:1px solid #2b2b2b;border-radius:12px;padding:0;margin-bottom:24px;">
                 <tr>
                   <td style="padding:14px 18px;">
                     <p style="margin:0;color:#8E8E93;font-size:13px;line-height:1.5;">
@@ -168,7 +168,7 @@ function resetEmailHtml(firstName: string, resetLink: string): string {
               <!-- Fallback link -->
               <p style="margin:0;color:#48484A;font-size:12px;line-height:1.6;">
                 If the button doesn't work, copy and paste this link into your browser:<br/>
-                <span style="color:#62e23f;word-break:break-all;font-size:11px;">${resetLink}</span>
+                <span style="color:#2f9e44;word-break:break-all;font-size:11px;">${resetLink}</span>
               </p>
 
             </td>

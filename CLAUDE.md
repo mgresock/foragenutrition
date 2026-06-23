@@ -21,22 +21,22 @@ When this conversation is compacted, **always update this CLAUDE.md file first**
 ## Design System — "Editorial Ledger" (dark broadsheet + acid lime)
 Aesthetic: Bloomberg terminal × Kinfolk magazine × a powerlifter's training log. Sharp corners everywhere, hairline borders (no soft shadows/elevation, no glassmorphism except the mobile sticky header), Archivo Black numerals + uppercase micro-labels, tabular alignment.
 ```
-Background (canvas):  #0a0d08   (near-black paper, green undertone)
-Surface:              #10140d
-Card:                 #161a10
-Border (hairline):    #282c20
-Border-bright:        #3c4230
-Lime (acid accent):   #62e23f   (CTAs, rings, highlights, success)  · dim #3f9e2b · glow #7df257
+Background (canvas):  #0c0c0c   (black)
+Surface:              #151515
+Card:                 #1b1b1b
+Border (hairline):    #2b2b2b
+Border-bright:        #3a3a3a
+Green (accent):       #2f9e44   (solid dark green — CTAs, rings, highlights, success)  · dim #1f6e2e · glow #39b350
 Amber (carbs/warn):   #FF9F0A
 Cyan (fats/info):     #32ADE6
 Text Primary (ink):   #f2f4e8   (warm off-white)
 Text Secondary:       #969c84
 Text Muted:           #565c46
 ```
-Tailwind config keys: `canvas`, `surface`, `card`, `border`, `border-bright`, `lime`, `amber`, `cyan`, `text-primary`, `text-secondary`, `text-muted`.
-- **`borderRadius` is globally flattened to `0`** in `tailwind.config.ts` — every `rounded-*` (incl. `rounded-full`) renders sharp. Circular progress rings are SVG stroke-based, so unaffected. Avatars/pips render square (on-brand). If you ever need a real circle, use inline `style={{ borderRadius: '50%' }}` (the range-slider thumb does this in `globals.css`).
+Tailwind config keys: `canvas`, `surface`, `card`, `border`, `border-bright`, `lime` (note: the `lime` key now holds the dark green), `amber`, `cyan`, `text-primary`, `text-secondary`, `text-muted`.
+- **`borderRadius` is lightly rounded** in `tailwind.config.ts` (`sm:3px DEFAULT:4px md:5px lg:6px xl:8px 2xl:10px 3xl:12px`); `full:9999px` so avatars/dots/spinners/FAB stay circular. (Earlier it was flattened to `0`; user asked for a slight radius.) Circular SVG progress rings are stroke-based, unaffected.
 - **`shadow-card`/`shadow-card-hover` are `none`** (flat broadsheet); only `shadow-lime-glow`/`lime-sm` remain, for primary CTAs.
-- Hardcoded data-viz colors (ring/chart strokes) use the literal acid lime `#62e23f` (was `#34C759`). The old brand greens `#34C759`/`#30D158`/`#248A3D` and grays `#2C2C2E`/`#1C1C1E`/`#3A3A3C` were swept out of `src/`.
+- Hardcoded data-viz colors (ring/chart strokes) use the literal dark green `#2f9e44`. Old greens `#34C759`/`#30D158`/`#248A3D`/`#62e23f` and grays `#2C2C2E`/`#1C1C1E`/`#3A3A3C` (and the interim paper grays `#0a0d08`/`#10140d`/`#161a10`/`#282c20`/`#3c4230`) were swept out of `src/`.
 
 ## Fonts
 - **Archivo Black** — `font-display` (headlines, big numerals, section labels — heavy, uppercase feel)

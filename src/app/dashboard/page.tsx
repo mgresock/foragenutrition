@@ -291,7 +291,7 @@ export default function DashboardPage() {
   };
 
   const MACROS = [
-    { label: "Protein", current: Math.round(totalProtein), goal: 180, color: "#62e23f", unit: "g" },
+    { label: "Protein", current: Math.round(totalProtein), goal: 180, color: "#2f9e44", unit: "g" },
     { label: "Carbs", current: Math.round(totalCarbs), goal: 280, color: "#FF9F0A", unit: "g" },
     { label: "Fat", current: Math.round(totalFat), goal: 70, color: "#32ADE6", unit: "g" },
   ];
@@ -369,14 +369,14 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Ring */}
             <div className="lg:col-span-1 bg-card border border-border rounded-2xl p-6 flex flex-col items-center justify-center relative overflow-hidden">
-              <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 50% 60%, rgba(98,226,63,0.05) 0%, transparent 70%)" }} />
+              <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 50% 60%, rgba(47,158,68,0.05) 0%, transparent 70%)" }} />
               <div className="relative w-40 h-40 mb-4">
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 140 140">
                   <circle cx="70" cy="70" r="60" fill="none" stroke="#1a2010" strokeWidth="10" />
-                  <circle cx="70" cy="70" r="60" fill="none" stroke="#62e23f" strokeWidth="10" strokeLinecap="round"
+                  <circle cx="70" cy="70" r="60" fill="none" stroke="#2f9e44" strokeWidth="10" strokeLinecap="round"
                     strokeDasharray={`${2 * Math.PI * 60}`}
                     strokeDashoffset={`${2 * Math.PI * 60 * (1 - progress / 100)}`}
-                    style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1)", filter: "drop-shadow(0 0 10px rgba(98,226,63,0.5))" }} />
+                    style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1)", filter: "drop-shadow(0 0 10px rgba(47,158,68,0.5))" }} />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="num font-display font-black text-3xl text-text-primary leading-none">{totalCals.toLocaleString()}</span>
@@ -417,7 +417,7 @@ export default function DashboardPage() {
                 <div className="relative w-14 h-14 flex-shrink-0">
                   <svg className="w-full h-full -rotate-90" viewBox="0 0 56 56">
                     <circle cx="28" cy="28" r="24" fill="none" stroke="#1a2010" strokeWidth="5" />
-                    <circle cx="28" cy="28" r="24" fill="none" stroke="#62e23f" strokeWidth="5" strokeLinecap="round"
+                    <circle cx="28" cy="28" r="24" fill="none" stroke="#2f9e44" strokeWidth="5" strokeLinecap="round"
                       strokeDasharray={`${2 * Math.PI * 24}`}
                       strokeDashoffset={`${2 * Math.PI * 24 * (1 - proteinProgress / 100)}`}
                       style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1)" }} />
@@ -458,7 +458,7 @@ export default function DashboardPage() {
                         <div className="absolute w-full border-t border-dashed border-border/60" style={{ bottom: `${goalPct}%` }} />
                         <div
                           className={`w-full rounded-t-md transition-all duration-700 ${isToday ? "bg-lime" : day.cals > 0 ? "bg-lime/30" : "bg-surface"}`}
-                          style={{ height: `${Math.max(pct, day.cals > 0 ? 4 : 0)}%`, boxShadow: isToday ? "0 0 12px rgba(98,226,63,0.3)" : "none" }}
+                          style={{ height: `${Math.max(pct, day.cals > 0 ? 4 : 0)}%`, boxShadow: isToday ? "0 0 12px rgba(47,158,68,0.3)" : "none" }}
                         />
                       </div>
                       <span className={`text-xs font-mono ${isToday ? "text-lime" : "text-text-muted"}`}>{day.label}</span>
@@ -480,7 +480,7 @@ export default function DashboardPage() {
               <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider mb-3">Today's Micronutrients</h3>
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: "Fiber", value: Math.round(totalFiber), unit: "g", goal: 30, color: "#62e23f" },
+                  { label: "Fiber", value: Math.round(totalFiber), unit: "g", goal: 30, color: "#2f9e44" },
                   { label: "Sugar", value: Math.round(totalSugar), unit: "g", goal: 50, color: "#FF9F0A" },
                   { label: "Sodium", value: Math.round(totalSodium), unit: "mg", goal: 2300, color: totalSodium > 2300 ? "#ef4444" : "#32ADE6" },
                 ].map((m) => (
@@ -504,12 +504,12 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
                   { label: "Vitamin C", food: Math.round(totalVitC), supp: Math.round(supplementVitaminBoost.vitamin_c_mg), unit: "mg", dv: 90, color: "#FF9F0A" },
-                  { label: "Vitamin D", food: +totalVitD.toFixed(1), supp: +supplementVitaminBoost.vitamin_d_mcg.toFixed(1), unit: "mcg", dv: 20, color: "#62e23f" },
+                  { label: "Vitamin D", food: +totalVitD.toFixed(1), supp: +supplementVitaminBoost.vitamin_d_mcg.toFixed(1), unit: "mcg", dv: 20, color: "#2f9e44" },
                   { label: "Vitamin B12", food: +totalB12.toFixed(1), supp: +supplementVitaminBoost.vitamin_b12_mcg.toFixed(1), unit: "mcg", dv: 2.4, color: "#32ADE6" },
-                  { label: "Calcium", food: Math.round(totalCalcium), supp: Math.round(supplementVitaminBoost.calcium_mg), unit: "mg", dv: 1000, color: "#62e23f" },
+                  { label: "Calcium", food: Math.round(totalCalcium), supp: Math.round(supplementVitaminBoost.calcium_mg), unit: "mg", dv: 1000, color: "#2f9e44" },
                   { label: "Iron", food: +totalIron.toFixed(1), supp: +supplementVitaminBoost.iron_mg.toFixed(1), unit: "mg", dv: 18, color: "#FF9F0A" },
                   { label: "Potassium", food: Math.round(totalPotassium), supp: Math.round(supplementVitaminBoost.potassium_mg), unit: "mg", dv: 4700, color: "#32ADE6" },
-                  { label: "Magnesium", food: Math.round(totalMagnesium), supp: Math.round(supplementVitaminBoost.magnesium_mg), unit: "mg", dv: 420, color: "#62e23f" },
+                  { label: "Magnesium", food: Math.round(totalMagnesium), supp: Math.round(supplementVitaminBoost.magnesium_mg), unit: "mg", dv: 420, color: "#2f9e44" },
                 ].map((v) => {
                   const total = v.food + v.supp;
                   const foodPct = Math.min(100, (v.food / v.dv) * 100);

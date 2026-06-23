@@ -6,7 +6,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#0a0d08",
+  themeColor: "#0c0c0c",
   viewportFit: "cover",
 };
 
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   },
   other: {
     "mobile-web-app-capable": "yes",
-    "msapplication-TileColor": "#0a0d08",
+    "msapplication-TileColor": "#0c0c0c",
     "msapplication-tap-highlight": "no",
   },
 };

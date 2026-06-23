@@ -11,9 +11,9 @@ export function ForageSpinner({
   onLight?: boolean;
   className?: string;
 }) {
-  const arc = onLight ? "#000000" : "#62e23f";
-  const arcFade = onLight ? "rgba(0,0,0,0.25)" : "rgba(98,226,63,0.25)";
-  const mark = onLight ? "#000000" : "#62e23f";
+  const arc = onLight ? "#000000" : "#2f9e44";
+  const arcFade = onLight ? "rgba(0,0,0,0.25)" : "rgba(47,158,68,0.25)";
+  const mark = onLight ? "#000000" : "#2f9e44";
 
   return (
     <span

@@ -15,7 +15,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ siz
         style={{
           width: size,
           height: size,
-          background: "#62e23f",
+          background: "#2f9e44",
           borderRadius: radius,
           display: "flex",
           alignItems: "center",

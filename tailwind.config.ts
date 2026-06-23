@@ -9,16 +9,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Editorial Ledger palette — dark broadsheet paper + acid lime
-        canvas:  "#0a0d08",   // paper: near-black with green undertone
-        surface: "#10140d",
-        card:    "#161a10",
-        border:       "#282c20",   // hairline
-        "border-bright": "#3c4230",
+        // Editorial Ledger palette — near-black canvas + solid dark green
+        canvas:  "#0c0c0c",   // black
+        surface: "#151515",
+        card:    "#1b1b1b",
+        border:       "#2b2b2b",   // hairline
+        "border-bright": "#3a3a3a",
         lime: {
-          DEFAULT: "#62e23f",   // acid lime accent
-          dim:     "#3f9e2b",
-          glow:    "#7df257",
+          DEFAULT: "#2f9e44",   // solid dark green accent (opaque, not neon)
+          dim:     "#1f6e2e",
+          glow:    "#39b350",
         },
         amber: {
           app: "#FF9F0A",
@@ -39,19 +39,18 @@ const config: Config = {
         body:    ["Hind", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
         mono:    ["DM Mono", "ui-monospace", "monospace"],
       },
-      // Editorial Ledger: sharp corners EVERYWHERE — panels, buttons, inputs,
-      // avatars, pips. Matches the broadsheet reference (square avatar + bars).
-      // Circular SVG progress rings are stroke-based, so unaffected by this.
+      // Slightly softened corners — small radius on panels/buttons/inputs,
+      // `full` restored to circular for avatars, dots, spinners, FAB.
       borderRadius: {
         none: "0",
-        sm:   "0",
-        DEFAULT: "0",
-        md:   "0",
-        lg:   "0",
-        xl:   "0",
-        "2xl": "0",
-        "3xl": "0",
-        full: "0",
+        sm:   "3px",
+        DEFAULT: "4px",
+        md:   "5px",
+        lg:   "6px",
+        xl:   "8px",
+        "2xl": "10px",
+        "3xl": "12px",
+        full: "9999px",
       },
       backgroundImage: {
         "grid-subtle":
@@ -83,8 +82,8 @@ const config: Config = {
       boxShadow: {
         // Editorial Ledger: flat broadsheet — no elevation, hairline borders do
         // the separating. Keep the acid-lime glow on primary CTAs (per reference).
-        "lime-glow":  "0 0 28px rgba(98,226,63,0.30)",
-        "lime-sm":    "0 0 12px rgba(98,226,63,0.22)",
+        "lime-glow":  "0 0 28px rgba(47,158,68,0.35)",
+        "lime-sm":    "0 0 12px rgba(47,158,68,0.25)",
         card:         "none",
         "card-hover": "none",
       },
