@@ -1192,13 +1192,24 @@ export default function CaloriesPage() {
       {activeTab === "log" && (
         <div>
           {logs.length === 0 ? (
-            <div className="bg-card border border-border rounded-2xl text-center py-16">
-              <p className="text-4xl mb-4">🍽️</p>
-              <p className="text-text-secondary">{isToday ? "Nothing logged yet today." : `No meals logged on ${formatDate(selectedDate)}.`}</p>
-              <div className="flex flex-col items-center gap-2 mt-3">
-                <button onClick={() => setActiveTab("search")} className="text-lime text-sm hover:text-lime-glow transition-colors">Search, scan, or log a meal →</button>
-                <button onClick={copyPreviousDay} disabled={saving} className="text-text-muted text-xs hover:text-text-secondary transition-colors disabled:opacity-50">↧ Copy yesterday&apos;s meals</button>
+            <div className="bg-card border border-border rounded-2xl text-center py-14 px-5">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-3xl animate-pulse-slow">🍽️</div>
+              <p className="font-display font-bold text-text-primary text-lg">{isToday ? "Nothing logged yet today." : `No meals on ${formatDate(selectedDate)}.`}</p>
+              <p className="text-text-muted text-sm mt-1 mb-5">Pick how you want to log — it takes seconds.</p>
+              <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
+                {[
+                  { tab: "search", icon: "🔍", label: "Search", tint: "#2f9e44" },
+                  { tab: "camera", icon: "📷", label: "Photo", tint: "#32ADE6" },
+                  { tab: "describe", icon: "✏️", label: "Describe", tint: "#FF9F0A" },
+                ].map((m) => (
+                  <button key={m.tab} onClick={() => setActiveTab(m.tab as typeof activeTab)} aria-label={`Log a meal via ${m.label}`}
+                    className="flex flex-col items-center gap-1.5 py-3 bg-surface border border-border rounded-xl hover:border-border-bright hover:-translate-y-0.5 transition-all">
+                    <span className="w-9 h-9 rounded-lg flex items-center justify-center text-lg" style={{ background: `${m.tint}1a` }}>{m.icon}</span>
+                    <span className="text-text-secondary text-xs font-medium">{m.label}</span>
+                  </button>
+                ))}
               </div>
+              <button onClick={copyPreviousDay} disabled={saving} className="text-text-muted text-xs hover:text-text-secondary transition-colors disabled:opacity-50 mt-4 inline-block">↧ Copy yesterday&apos;s meals</button>
             </div>
           ) : (
             <div className="space-y-4">

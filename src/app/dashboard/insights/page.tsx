@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { ForageSpinner } from "@/components/ui/ForageSpinner";
 import { computeTargets, goalFromGoals } from "@/lib/nutrition";
@@ -89,6 +90,27 @@ export default function InsightsPage() {
   }, [supabase]);
 
   if (loading || !stats) return <div className="flex items-center justify-center py-32"><ForageSpinner size={32} /></div>;
+
+  if (stats.totalMeals === 0) {
+    return (
+      <div className="px-5 sm:px-8 py-8 pb-24 lg:pb-8 max-w-5xl">
+        <p className="text-lime text-xs font-mono uppercase tracking-[0.2em] mb-1.5">12-Week Window</p>
+        <h1 className="font-display font-black text-4xl sm:text-5xl uppercase tracking-tight leading-[0.95] text-text-primary">Insights</h1>
+        <p className="text-text-secondary mt-2 mb-8">Adherence, body comp, spend, and milestones in one view.</p>
+        <div className="bg-card border border-border rounded-2xl p-12 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-3xl animate-pulse-slow">📊</div>
+          <p className="font-display font-bold text-text-primary text-lg">No insights yet.</p>
+          <p className="text-text-muted text-sm mt-1.5 mb-6 max-w-sm mx-auto">Log meals for a few days and your adherence trend, streak, body comp, and achievements will unlock here.</p>
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-7">
+            {ACHIEVEMENTS.slice(0, 5).map((a) => (
+              <span key={a.id} className="w-10 h-10 rounded-xl bg-surface border border-border flex items-center justify-center text-lg opacity-40 grayscale" title={a.label}>{a.icon}</span>
+            ))}
+          </div>
+          <Link href="/dashboard/calories" className="inline-flex items-center gap-2 bg-lime text-canvas font-display font-bold px-6 py-3.5 rounded-xl uppercase tracking-wider text-sm hover:bg-lime-glow transition-all shadow-lime-sm">Log your first meal →</Link>
+        </div>
+      </div>
+    );
+  }
 
   // last 12 weeks adherence (protein-hit % per week)
   const weeks: { label: string; pct: number }[] = [];

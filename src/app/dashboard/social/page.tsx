@@ -293,7 +293,7 @@ export default function SocialPage() {
   };
 
   const qrUrl = profile?.friend_code
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(profile.friend_code)}&bgcolor=000000&color=34C759&margin=2`
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(profile.friend_code)}&bgcolor=0c0c0c&color=2f9e44&margin=2`
     : null;
 
   if (loading) {
@@ -414,10 +414,10 @@ export default function SocialPage() {
           </div>
 
           {friends.length === 0 ? (
-            <div className="bg-card border border-border rounded-2xl p-8 text-center">
-              <div className="text-4xl mb-3">🤝</div>
-              <div className="text-text-primary font-medium mb-1">Your circle is empty</div>
-              <div className="text-text-muted text-sm">Add friends with their code to see their daily progress</div>
+            <div className="bg-card border border-border rounded-2xl p-10 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-3xl animate-pulse-slow">🤝</div>
+              <div className="font-display font-bold text-text-primary text-lg">Your circle is empty</div>
+              <div className="text-text-muted text-sm mt-1 max-w-xs mx-auto">Add friends with their code above to see their daily calorie &amp; protein progress — and keep each other accountable.</div>
             </div>
           ) : (
             <>
@@ -470,10 +470,10 @@ export default function SocialPage() {
           </div>
 
           {groups.length === 0 ? (
-            <div className="bg-card border border-border rounded-2xl p-8 text-center">
-              <div className="text-4xl mb-3">💪</div>
-              <div className="text-text-primary font-medium mb-1">No groups yet</div>
-              <div className="text-text-muted text-sm">Create one or join with an invite code</div>
+            <div className="bg-card border border-border rounded-2xl p-10 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-3xl animate-pulse-slow">💪</div>
+              <div className="font-display font-bold text-text-primary text-lg">No groups yet</div>
+              <div className="text-text-muted text-sm mt-1 max-w-xs mx-auto">Create a crew or join with an invite code to compete on streaks and protein goals together.</div>
             </div>
           ) : (
             <div className="space-y-3">

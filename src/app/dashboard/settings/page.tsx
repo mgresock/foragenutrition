@@ -5,11 +5,11 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 const SETTINGS = [
-  { label: "Plan & Billing", desc: "Upgrade to Pro · manage subscription", href: "/dashboard/settings/billing", badge: "Upgrade" },
-  { label: "Profile & Body Stats", desc: "Age, height, weight, biological sex", href: "/dashboard/settings/profile" },
-  { label: "Nutrition Goals", desc: "Goals and meals per week", href: "/dashboard/settings/goals" },
-  { label: "Grocery Preferences", desc: "Budget and ZIP code", href: "/dashboard/settings/grocery" },
-  { label: "Supplements", desc: "Your daily supplement stack", href: "/dashboard/settings/supplements" },
+  { label: "Plan & Billing", desc: "Upgrade to Pro · manage subscription", href: "/dashboard/settings/billing", badge: "Upgrade", icon: "⚡", tint: "#FF9F0A" },
+  { label: "Profile & Body Stats", desc: "Age, height, weight, biological sex", href: "/dashboard/settings/profile", icon: "🧍", tint: "#2f9e44" },
+  { label: "Nutrition Goals", desc: "Goals and meals per week", href: "/dashboard/settings/goals", icon: "🎯", tint: "#32ADE6" },
+  { label: "Grocery Preferences", desc: "Budget and ZIP code", href: "/dashboard/settings/grocery", icon: "🛒", tint: "#a78bfa" },
+  { label: "Supplements", desc: "Your daily supplement stack", href: "/dashboard/settings/supplements", icon: "💊", tint: "#2f9e44" },
 ];
 
 export default function SettingsPage() {
@@ -31,17 +31,18 @@ export default function SettingsPage() {
       <div className="space-y-4">
         {SETTINGS.map((s) => (
           <Link key={s.label} href={s.href}
-            className="bg-card border border-border rounded-2xl p-5 flex items-center justify-between hover:border-border-bright transition-all cursor-pointer group block">
-            <div>
+            className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4 hover:border-border-bright hover:-translate-y-0.5 transition-all cursor-pointer group block">
+            <span className="w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: `${s.tint}1f`, border: `1px solid ${s.tint}33` }}>{s.icon}</span>
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <h3 className="font-display font-bold text-text-primary text-sm">{s.label}</h3>
+                <h3 className="font-display font-bold text-text-primary text-sm group-hover:text-lime transition-colors">{s.label}</h3>
                 {"badge" in s && s.badge && (
-                  <span className="px-1.5 py-0.5 bg-red-500/10 border border-red-500/20 rounded text-red-400 text-xs">{s.badge}</span>
+                  <span className="px-1.5 py-0.5 bg-amber-app/10 border border-amber-app/30 rounded text-amber-app text-[10px] font-mono uppercase tracking-wider">{s.badge}</span>
                 )}
               </div>
               <p className="text-text-muted text-xs mt-0.5">{s.desc}</p>
             </div>
-            <svg className="w-4 h-4 text-text-muted group-hover:text-text-secondary transition-colors" fill="none" viewBox="0 0 16 16">
+            <svg className="w-4 h-4 text-text-muted group-hover:text-text-secondary group-hover:translate-x-0.5 transition-all flex-shrink-0" fill="none" viewBox="0 0 16 16">
               <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>

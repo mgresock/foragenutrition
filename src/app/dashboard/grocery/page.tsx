@@ -689,17 +689,22 @@ export default function GroceryPage() {
           </div>
         </div>
       ) : list.length === 0 ? (
-        <div className="bg-card border border-border rounded-2xl p-16 text-center">
-          <p className="text-5xl mb-4">🛒</p>
-          <h3 className="font-display font-bold text-text-primary text-lg mb-2">No grocery list yet</h3>
-          <p className="text-text-secondary text-sm mb-6 max-w-sm mx-auto">
+        <div className="bg-card border border-border rounded-2xl p-12 text-center">
+          <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-4xl animate-pulse-slow">🛒</div>
+          <h3 className="font-display font-bold text-text-primary text-xl mb-2">Let&apos;s build your week.</h3>
+          <p className="text-text-secondary text-sm mb-5 max-w-sm mx-auto">
             {selectedStores.length > 0
-              ? `Ready to build a list for ${selectedStores.join(", ")}.`
-              : "Select your local stores above, or hit Generate to let AI pick for your area."}
+              ? `Ready to build a high-protein, on-budget list for ${selectedStores.join(", ")}.`
+              : "Pick your local stores above, or hit Generate and AI plans 7 days of meals + the exact items to buy."}
           </p>
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-7 text-xs">
+            {[{ i: "💪", t: "High-protein" }, { i: "💸", t: "On budget" }, { i: "🗓️", t: "7-day plan" }].map((b) => (
+              <span key={b.t} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-border rounded-full text-text-secondary">{b.i} {b.t}</span>
+            ))}
+          </div>
           <button
             onClick={() => generateList(false)}
-            className="px-6 py-3 bg-lime text-canvas font-display font-bold rounded-xl hover:bg-lime-glow transition-all shadow-lime-sm"
+            className="px-6 py-3.5 bg-lime text-canvas font-display font-bold rounded-xl uppercase tracking-wider hover:bg-lime-glow transition-all shadow-lime-sm"
           >
             ✦ Generate My List
           </button>
