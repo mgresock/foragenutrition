@@ -297,13 +297,14 @@ export default function DashboardPage() {
   ];
 
   const QUICK_ACTIONS = [
-    { label: "Log a Meal", href: "/dashboard/calories", icon: "🍽️", desc: "Photo, describe, or manual" },
-    { label: "Grocery AI", href: "/dashboard/grocery", icon: "🛒", desc: "High-protein, on budget" },
-    { label: "Restaurants", href: "/dashboard/restaurants", icon: "🥗", desc: "Eat out smarter" },
-    { label: "Scan Receipt", href: "/dashboard/receipts", icon: "📄", desc: "Track spend & nutrition" },
+    { label: "Log a Meal", href: "/dashboard/calories", icon: "🍽️", desc: "Photo, describe, or manual", tint: "#2f9e44" },
+    { label: "Grocery AI", href: "/dashboard/grocery", icon: "🛒", desc: "High-protein, on budget", tint: "#FF9F0A" },
+    { label: "Restaurants", href: "/dashboard/restaurants", icon: "🥗", desc: "Eat out smarter", tint: "#32ADE6" },
+    { label: "Scan Receipt", href: "/dashboard/receipts", icon: "📄", desc: "Track spend & nutrition", tint: "#a78bfa" },
   ];
 
   const weeklyMax = Math.max(...weeklyData.map((d) => d.cals), targets.calories);
+  const weekTotal = weeklyData.reduce((s, d) => s + d.cals, 0);
   const todayIso = new Date().toISOString().split("T")[0];
 
   /* ── upgrade nudge shared between mobile top and desktop right column ── */
@@ -340,12 +341,17 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex flex-col items-end gap-2 flex-shrink-0">
-          {streak > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-400/10 border border-orange-400/30 rounded-full">
+          {streak > 0 ? (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-400/10 border border-orange-400/30 rounded-full animate-fade-in">
               <span className="text-sm">🔥</span>
               <span className="num font-display font-black text-orange-400 text-sm">{streak}</span>
               <span className="text-orange-400/70 text-xs">day streak</span>
             </div>
+          ) : (
+            <Link href="/dashboard/calories" className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-border rounded-full hover:border-orange-400/40 transition-colors group">
+              <span className="text-sm grayscale group-hover:grayscale-0 transition-all">🔥</span>
+              <span className="text-text-secondary text-xs group-hover:text-text-primary transition-colors">Start a streak today</span>
+            </Link>
           )}
           <Link href="/dashboard/social">
             <UserAvatar src={profile?.avatar_url} size={40} className="ring-2 ring-lime/30" />
@@ -372,11 +378,18 @@ export default function DashboardPage() {
               <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(circle at 50% 60%, rgba(47,158,68,0.05) 0%, transparent 70%)" }} />
               <div className="relative w-40 h-40 mb-4">
                 <svg className="w-full h-full -rotate-90" viewBox="0 0 140 140">
-                  <circle cx="70" cy="70" r="60" fill="none" stroke="#1a2010" strokeWidth="10" />
-                  <circle cx="70" cy="70" r="60" fill="none" stroke="#2f9e44" strokeWidth="10" strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 60}`}
-                    strokeDashoffset={`${2 * Math.PI * 60 * (1 - progress / 100)}`}
-                    style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1)", filter: "drop-shadow(0 0 10px rgba(47,158,68,0.5))" }} />
+                  {totalCals === 0 ? (
+                    <circle cx="70" cy="70" r="60" fill="none" stroke="#2f9e44" strokeWidth="10" strokeLinecap="round"
+                      strokeDasharray="4 14" opacity="0.35" className="animate-pulse-slow" />
+                  ) : (
+                    <>
+                      <circle cx="70" cy="70" r="60" fill="none" stroke="#1a2010" strokeWidth="10" />
+                      <circle cx="70" cy="70" r="60" fill="none" stroke="#2f9e44" strokeWidth="10" strokeLinecap="round"
+                        strokeDasharray={`${2 * Math.PI * 60}`}
+                        strokeDashoffset={`${2 * Math.PI * 60 * (1 - progress / 100)}`}
+                        style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1)", filter: "drop-shadow(0 0 10px rgba(47,158,68,0.5))" }} />
+                    </>
+                  )}
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="num font-display font-black text-3xl text-text-primary leading-none">{totalCals.toLocaleString()}</span>
@@ -457,8 +470,8 @@ export default function DashboardPage() {
                       <div className="w-full flex flex-col justify-end" style={{ height: "80px" }}>
                         <div className="absolute w-full border-t border-dashed border-border/60" style={{ bottom: `${goalPct}%` }} />
                         <div
-                          className={`w-full rounded-t-md transition-all duration-700 ${isToday ? "bg-lime" : day.cals > 0 ? "bg-lime/30" : "bg-surface"}`}
-                          style={{ height: `${Math.max(pct, day.cals > 0 ? 4 : 0)}%`, boxShadow: isToday ? "0 0 12px rgba(47,158,68,0.3)" : "none" }}
+                          className={`w-full rounded-t-md transition-all duration-700 ${isToday ? "bg-lime" : day.cals > 0 ? "bg-lime/30" : "bg-border/40"}`}
+                          style={{ height: `${Math.max(pct, day.cals > 0 ? 4 : 6)}%`, boxShadow: isToday && day.cals > 0 ? "0 0 12px rgba(47,158,68,0.3)" : "none" }}
                         />
                       </div>
                       <span className={`text-xs font-mono ${isToday ? "text-lime" : "text-text-muted"}`}>{day.label}</span>
@@ -471,6 +484,9 @@ export default function DashboardPage() {
                   );
                 })}
               </div>
+              {weekTotal === 0 && (
+                <p className="text-center text-text-muted text-xs mt-4">Log meals through the week and watch your trend build 📈</p>
+              )}
             </div>
           )}
 
@@ -548,8 +564,22 @@ export default function DashboardPage() {
             </div>
             {logs.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-text-muted text-sm">Nothing logged yet today.</p>
-                <Link href="/dashboard/calories" className="text-lime text-sm mt-2 inline-block hover:text-lime-glow">Log your first meal →</Link>
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-3xl animate-pulse-slow">🍳</div>
+                <p className="font-display font-bold text-text-primary text-lg">Your plate's empty.</p>
+                <p className="text-text-muted text-sm mt-1 mb-5 max-w-xs mx-auto">Log your first meal to build your macros, streak, and AI insights.</p>
+                <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
+                  {[
+                    { icon: "📷", label: "Photo", tint: "#2f9e44" },
+                    { icon: "✏️", label: "Describe", tint: "#FF9F0A" },
+                    { icon: "⌨️", label: "Manual", tint: "#32ADE6" },
+                  ].map((m) => (
+                    <Link key={m.label} href="/dashboard/calories"
+                      className="flex flex-col items-center gap-1.5 py-3 bg-surface border border-border rounded-xl hover:border-border-bright hover:-translate-y-0.5 transition-all">
+                      <span className="w-9 h-9 rounded-lg flex items-center justify-center text-lg" style={{ background: `${m.tint}1a` }}>{m.icon}</span>
+                      <span className="text-text-secondary text-xs font-medium">{m.label}</span>
+                    </Link>
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="space-y-0">
@@ -666,8 +696,8 @@ export default function DashboardPage() {
             <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider mb-4">Quick Actions</h3>
             <div className="grid grid-cols-2 gap-3">
               {QUICK_ACTIONS.map((a) => (
-                <Link key={a.href} href={a.href} className="bg-surface border border-border rounded-2xl p-4 hover:border-border-bright transition-all group flex flex-col">
-                  <span className="text-2xl mb-2 block">{a.icon}</span>
+                <Link key={a.href} href={a.href} className="bg-surface border border-border rounded-2xl p-4 hover:border-border-bright hover:-translate-y-0.5 transition-all group flex flex-col">
+                  <span className="w-10 h-10 rounded-xl flex items-center justify-center text-xl mb-2.5" style={{ background: `${a.tint}1f`, border: `1px solid ${a.tint}33` }}>{a.icon}</span>
                   <h3 className="font-display font-bold text-text-primary text-xs group-hover:text-lime transition-colors leading-tight">{a.label}</h3>
                   <p className="text-text-muted text-[10px] mt-0.5 leading-tight">{a.desc}</p>
                 </Link>
@@ -792,8 +822,8 @@ export default function DashboardPage() {
         {/* Quick actions */}
         <div className="grid grid-cols-2 gap-3">
           {QUICK_ACTIONS.map((a) => (
-            <Link key={a.href} href={a.href} className="bg-card border border-border rounded-2xl p-5 hover:border-border-bright transition-all group">
-              <span className="text-3xl mb-3 block">{a.icon}</span>
+            <Link key={a.href} href={a.href} className="bg-card border border-border rounded-2xl p-5 hover:border-border-bright active:scale-[0.98] transition-all group">
+              <span className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-3" style={{ background: `${a.tint}1f`, border: `1px solid ${a.tint}33` }}>{a.icon}</span>
               <h3 className="font-display font-bold text-text-primary text-sm group-hover:text-lime transition-colors">{a.label}</h3>
               <p className="text-text-muted text-xs mt-1">{a.desc}</p>
             </Link>
