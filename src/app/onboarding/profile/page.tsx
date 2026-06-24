@@ -5,31 +5,14 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ForageSpinner } from "@/components/ui/ForageSpinner";
 import { OnboardingShell } from "@/components/onboarding/OnboardingShell";
+import { Icon, type IconName } from "@/components/ui/Icon";
 
 type Unit = "imperial" | "metric";
 
-const PRIMARY_GOALS = [
-  {
-    id: "gain",
-    emoji: "💪",
-    label: "Gain Weight",
-    sub: "Build muscle & size",
-    color: "lime" as const,
-  },
-  {
-    id: "lose",
-    emoji: "🔥",
-    label: "Lose Weight",
-    sub: "Burn fat, stay lean",
-    color: "orange" as const,
-  },
-  {
-    id: "maintain",
-    emoji: "⚖️",
-    label: "Maintain",
-    sub: "Stay where I am",
-    color: "cyan" as const,
-  },
+const PRIMARY_GOALS: { id: string; icon: IconName; label: string; sub: string; color: "lime" | "orange" | "cyan" }[] = [
+  { id: "gain", icon: "dumbbell", label: "Gain Weight", sub: "Build muscle & size", color: "lime" },
+  { id: "lose", icon: "flame", label: "Lose Weight", sub: "Burn fat, stay lean", color: "orange" },
+  { id: "maintain", icon: "scale", label: "Maintain", sub: "Stay where I am", color: "cyan" },
 ];
 
 const GOAL_STYLES: Record<string, { selected: string; dot: string }> = {
@@ -164,7 +147,7 @@ export default function ProfilePage() {
                   {selected && (
                     <span className={`absolute top-2.5 right-2.5 w-2 h-2 rounded-full ${styles.dot}`} />
                   )}
-                  <span className="text-3xl leading-none">{g.emoji}</span>
+                  <span className={selected ? (g.color === "lime" ? "text-lime" : g.color === "orange" ? "text-orange-400" : "text-cyan-app") : "text-text-secondary"}><Icon name={g.icon} className="w-7 h-7" /></span>
                   <div className="text-center">
                     <p className={`font-display font-bold text-sm leading-tight ${selected ? (g.color === "lime" ? "text-lime" : g.color === "orange" ? "text-orange-400" : "text-cyan-app") : "text-text-primary"}`}>
                       {g.label}

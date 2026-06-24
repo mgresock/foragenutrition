@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ForageSpinner } from "@/components/ui/ForageSpinner";
+import { Icon } from "@/components/ui/Icon";
 import Link from "next/link";
 
 interface ReceiptItem { id: string; name: string; price: number; category: string; healthy: boolean | null; }
@@ -198,7 +199,7 @@ export default function ReceiptsPage() {
             </div>
           ) : (
             <div className="bg-card border border-border rounded-2xl p-12 text-center">
-              <p className="text-4xl mb-4">📄</p>
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-lime"><Icon name="receipt" className="w-7 h-7" /></div>
               <p className="text-text-secondary">Scan a receipt to see its analysis here.</p>
             </div>
           )}

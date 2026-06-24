@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ForageSpinner } from "@/components/ui/ForageSpinner";
 import { FoodSearchTab, type FoodLogEntry } from "@/components/calories/FoodSearchTab";
+import { Icon, type IconName } from "@/components/ui/Icon";
 import { computeTargets, goalFromGoals } from "@/lib/nutrition";
 import Link from "next/link";
 
@@ -208,13 +209,13 @@ function EntryDetailModal({ entry, onClose, onDelete, onUpdate }: { entry: MealL
   if (entry.calories < 300) insightTags.push({ text: "light meal", color: "text-text-muted" });
   if (entry.calories > 700) insightTags.push({ text: "high calorie", color: "text-text-muted" });
 
-  const roles: { icon: string; title: string; desc: string; color: string }[] = [];
+  const roles: { icon: IconName; title: string; desc: string; color: string }[] = [];
   if (entry.protein_g >= 20) {
     roles.push(proteinQuality === "complete"
-      ? { icon: "💪", title: "Muscle Protein Synthesis", desc: `${entry.protein_g}g complete protein — all essential amino acids trigger muscle repair and growth.`, color: "text-lime" }
-      : { icon: "💪", title: "Muscle Support", desc: `${entry.protein_g}g protein toward your daily target. Pair with a complete source for full amino acid coverage.`, color: "text-lime" });
+      ? { icon: "dumbbell", title: "Muscle Protein Synthesis", desc: `${entry.protein_g}g complete protein — all essential amino acids trigger muscle repair and growth.`, color: "text-lime" }
+      : { icon: "dumbbell", title: "Muscle Support", desc: `${entry.protein_g}g protein toward your daily target. Pair with a complete source for full amino acid coverage.`, color: "text-lime" });
   } else if (entry.protein_g >= 10) {
-    roles.push({ icon: "💪", title: "Protein Contribution", desc: `${entry.protein_g}g — partial contribution toward your daily muscle-building target.`, color: "text-lime" });
+    roles.push({ icon: "dumbbell", title: "Protein Contribution", desc: `${entry.protein_g}g — partial contribution toward your daily muscle-building target.`, color: "text-lime" });
   }
   if (entry.carbs_g >= 20) {
     const carbDescs: Record<string, { title: string; desc: string }> = {
@@ -223,18 +224,18 @@ function EntryDetailModal({ entry, onClose, onDelete, onUpdate }: { entry: MealL
       mixed: { title: "Mixed Energy", desc: `${entry.carbs_g}g blend of fast and slow carbs — initial boost with sustained follow-through.` },
     };
     const c = carbDescs[carbType] ?? carbDescs.mixed;
-    roles.push({ icon: "⚡", title: c.title, desc: c.desc, color: "text-amber-app" });
+    roles.push({ icon: "bolt", title: c.title, desc: c.desc, color: "text-amber-app" });
   }
   if (fiber >= 5) {
-    roles.push({ icon: "🌾", title: "Gut & Blood Sugar", desc: `${fiber}g fiber slows digestion, stabilizes blood sugar, and feeds beneficial gut bacteria.`, color: "text-text-secondary" });
+    roles.push({ icon: "leaf", title: "Gut & Blood Sugar", desc: `${fiber}g fiber slows digestion, stabilizes blood sugar, and feeds beneficial gut bacteria.`, color: "text-text-secondary" });
   }
   if (entry.fat_g >= 8) {
     roles.push(unsatFat >= satFat
-      ? { icon: "🫀", title: "Hormone & Recovery Support", desc: `${entry.fat_g}g healthy fats support testosterone and absorption of vitamins A, D, E, and K.`, color: "text-cyan-app" }
-      : { icon: "🔥", title: "Dense Energy", desc: `${entry.fat_g}g fat — high-calorie fuel. Saturated fat is elevated; balance with unsaturated sources over the day.`, color: "text-cyan-app" });
+      ? { icon: "droplet", title: "Hormone & Recovery Support", desc: `${entry.fat_g}g healthy fats support testosterone and absorption of vitamins A, D, E, and K.`, color: "text-cyan-app" }
+      : { icon: "flame", title: "Dense Energy", desc: `${entry.fat_g}g fat — high-calorie fuel. Saturated fat is elevated; balance with unsaturated sources over the day.`, color: "text-cyan-app" });
   }
   if (meta.sodium_mg && meta.sodium_mg > 800) {
-    roles.push({ icon: "💧", title: "Electrolyte Replenishment", desc: `${meta.sodium_mg}mg sodium helps replace electrolytes lost during training. Stay hydrated.`, color: "text-text-secondary" });
+    roles.push({ icon: "droplet", title: "Electrolyte Replenishment", desc: `${meta.sodium_mg}mg sodium helps replace electrolytes lost during training. Stay hydrated.`, color: "text-text-secondary" });
   }
 
   const sourceLabel: Record<string, string> = {
@@ -455,7 +456,7 @@ function EntryDetailModal({ entry, onClose, onDelete, onUpdate }: { entry: MealL
             <div className="space-y-3">
               {roles.map((role) => (
                 <div key={role.title} className="flex items-start gap-3">
-                  <span className="text-base flex-shrink-0 mt-0.5">{role.icon}</span>
+                  <span className={`flex-shrink-0 mt-0.5 ${role.color}`}><Icon name={role.icon} className="w-4 h-4" /></span>
                   <div>
                     <p className={`text-xs font-semibold mb-0.5 ${role.color}`}>{role.title}</p>
                     <p className="text-text-muted text-xs leading-snug">{role.desc}</p>
@@ -495,7 +496,7 @@ function EntryDetailModal({ entry, onClose, onDelete, onUpdate }: { entry: MealL
 
         {/* Insight line */}
         <div className="flex items-start gap-2 bg-card border border-border rounded-xl px-4 py-3 mb-5">
-          <span className="text-sm mt-0.5">💡</span>
+          <span className="text-amber-app flex-shrink-0 mt-0.5"><Icon name="info" className="w-4 h-4" /></span>
           <span className="text-text-secondary text-sm leading-relaxed">
             This meal is{" "}
             <span className={`font-semibold ${domColor}`}>{dominant}</span>
@@ -795,11 +796,11 @@ export default function CaloriesPage() {
   // All logging methods are available on any selected day (backdated logging).
   const visibleTabs: { id: Tab; label: string }[] = [
     { id: "log", label: "Log" },
-    { id: "search", label: "🔍 Search" },
-    { id: "build", label: "🧩 Build" },
-    { id: "camera", label: "📷 Photo" },
-    { id: "describe", label: "✍️ Describe" },
-    { id: "brand", label: "🏪 Brand" },
+    { id: "search", label: "Search" },
+    { id: "build", label: "Build" },
+    { id: "camera", label: "Photo" },
+    { id: "describe", label: "Describe" },
+    { id: "brand", label: "Brand" },
     { id: "manual", label: "Manual" },
   ];
 
@@ -1193,18 +1194,18 @@ export default function CaloriesPage() {
         <div>
           {logs.length === 0 ? (
             <div className="bg-card border border-border rounded-2xl text-center py-14 px-5">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-3xl animate-pulse-slow">🍽️</div>
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-lime animate-pulse-slow"><Icon name="meal" className="w-7 h-7" /></div>
               <p className="font-display font-bold text-text-primary text-lg">{isToday ? "Nothing logged yet today." : `No meals on ${formatDate(selectedDate)}.`}</p>
               <p className="text-text-muted text-sm mt-1 mb-5">Pick how you want to log — it takes seconds.</p>
               <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
-                {[
-                  { tab: "search", icon: "🔍", label: "Search", tint: "#2f9e44" },
-                  { tab: "camera", icon: "📷", label: "Photo", tint: "#32ADE6" },
-                  { tab: "describe", icon: "✏️", label: "Describe", tint: "#FF9F0A" },
-                ].map((m) => (
-                  <button key={m.tab} onClick={() => setActiveTab(m.tab as typeof activeTab)} aria-label={`Log a meal via ${m.label}`}
+                {([
+                  { tab: "search", icon: "search", label: "Search", tint: "#2f9e44" },
+                  { tab: "camera", icon: "camera", label: "Photo", tint: "#32ADE6" },
+                  { tab: "describe", icon: "edit", label: "Describe", tint: "#FF9F0A" },
+                ] as { tab: Tab; icon: IconName; label: string; tint: string }[]).map((m) => (
+                  <button key={m.tab} onClick={() => setActiveTab(m.tab)} aria-label={`Log a meal via ${m.label}`}
                     className="flex flex-col items-center gap-1.5 py-3 bg-surface border border-border rounded-xl hover:border-border-bright hover:-translate-y-0.5 transition-all">
-                    <span className="w-9 h-9 rounded-lg flex items-center justify-center text-lg" style={{ background: `${m.tint}1a` }}>{m.icon}</span>
+                    <span className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${m.tint}1a`, color: m.tint }}><Icon name={m.icon} className="w-[18px] h-[18px]" /></span>
                     <span className="text-text-secondary text-xs font-medium">{m.label}</span>
                   </button>
                 ))}
@@ -1216,7 +1217,7 @@ export default function CaloriesPage() {
               {groupByTime(logs).map(({ label, emoji, entries }) => (
                 <div key={label}>
                   <div className="flex items-center gap-2 mb-2 px-1">
-                    <span className="text-sm">{emoji}</span>
+                    <Icon name="clock" className="w-3.5 h-3.5 text-text-muted" />
                     <span className="text-text-muted text-xs font-mono uppercase tracking-wider">{label}</span>
                     <div className="flex-1 h-px bg-border" />
                     {entries.length >= 2 && (
@@ -1300,7 +1301,7 @@ export default function CaloriesPage() {
             </div>
           ) : !imagePreview ? (
             <div className="border-2 border-dashed border-border rounded-2xl p-10 text-center">
-              <div className="text-5xl mb-4">📷</div>
+              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-cyan-app/10 border border-cyan-app/20 flex items-center justify-center text-cyan-app"><Icon name="camera" className="w-7 h-7" /></div>
               <h3 className="font-display font-bold text-text-primary mb-2">Add a food photo</h3>
               <p className="text-text-secondary text-sm mb-5">Our AI will identify the food and estimate calories &amp; macros</p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -1480,7 +1481,7 @@ export default function CaloriesPage() {
               {analyzing ? (
                 <><ForageSpinner size={16} />Looking up nutrition facts...</>
               ) : (
-                <>🔍 Look Up Nutrition Facts</>
+                <>Look Up Nutrition Facts</>
               )}
             </button>
           </div>
@@ -1541,7 +1542,7 @@ export default function CaloriesPage() {
       {activeTab === "build" && (
         <div className="space-y-4">
           <div className="flex items-start gap-3 bg-card border border-border rounded-2xl px-4 py-3">
-            <span className="text-lime text-sm mt-0.5">🧩</span>
+            <span className="text-lime flex-shrink-0 mt-0.5"><Icon name="info" className="w-4 h-4" /></span>
             <p className="text-text-muted text-xs leading-relaxed">Craft a full meal from individual parts. Add each food with its amount — enter macros yourself or let AI estimate them. You&apos;ll see the combined protein &amp; macro breakdown for every part, saved together as one meal you can reopen anytime.</p>
           </div>
 
@@ -1646,7 +1647,7 @@ export default function CaloriesPage() {
 
             <button onClick={estimateComponent} disabled={!compName.trim() || compEstimating}
               className="w-full flex items-center justify-center gap-2 bg-lime/10 border border-lime/30 hover:border-lime/50 rounded-xl py-2.5 text-lime font-medium text-sm transition-all hover:bg-lime/15 disabled:opacity-40 disabled:cursor-not-allowed">
-              {compEstimating ? <><ForageSpinner size={14} />Estimating…</> : <>✨ Estimate macros with AI</>}
+              {compEstimating ? <><ForageSpinner size={14} />Estimating…</> : <><Icon name="sparkle" className="w-4 h-4" />Estimate macros with AI</>}
             </button>
 
             <div className="grid grid-cols-4 gap-2">
@@ -1686,7 +1687,7 @@ export default function CaloriesPage() {
               </button>
               <button onClick={saveTemplate} disabled={saving}
                 className="w-full bg-surface border border-border text-text-secondary rounded-xl py-2.5 text-sm hover:border-lime/40 hover:text-text-primary transition-all disabled:opacity-40">
-                ☆ Save as reusable template
+                Save as reusable template
               </button>
             </div>
           )}

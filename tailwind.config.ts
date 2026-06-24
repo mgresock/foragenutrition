@@ -30,8 +30,8 @@ const config: Config = {
         },
         text: {
           primary:   "#f2f4e8",   // warm off-white ink
-          secondary: "#969c84",
-          muted:     "#565c46",
+          secondary: "#969c84",   // WCAG AA on canvas/surface/card
+          muted:     "#868c72",   // WCAG AA (>=4.9:1) — was #565c46 which failed
         },
       },
       fontFamily: {

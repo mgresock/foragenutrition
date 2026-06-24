@@ -22,6 +22,35 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* ── A11y: honor reduced-motion (WCAG 2.3.3 / 2.2.2) ───────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── A11y: skip-to-content link (visible on keyboard focus) ── */
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: -3rem;
+  z-index: 100;
+  background: #2f9e44;
+  color: #0c0c0c;
+  font-weight: 700;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: 0.75rem;
+  outline: 2px solid #f2f4e8;
+  outline-offset: 2px;
+}
+
 html {
   overscroll-behavior: none;
   height: 100%;

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import { Icon, type IconName } from "@/components/ui/Icon";
 import { getSupplementEffect } from "@/lib/supplementEffects";
 import { computeTargets, goalFromGoals } from "@/lib/nutrition";
 
@@ -67,8 +68,8 @@ function DailyFact() {
   }, []);
   return (
     <div className="flex items-center gap-2.5 px-4 py-2.5 bg-surface border border-border rounded-xl overflow-hidden">
-      <span className="text-base flex-shrink-0">{fact.emoji}</span>
-      <p className="text-text-muted text-[11px] leading-relaxed truncate sm:whitespace-normal sm:overflow-visible">
+      <Icon name="info" className="w-4 h-4 text-lime flex-shrink-0" />
+      <p className="text-text-secondary text-[11px] leading-relaxed truncate sm:whitespace-normal sm:overflow-visible">
         <span className="text-lime font-medium">Did you know?</span>{" "}{fact.fact}
       </p>
     </div>
@@ -83,8 +84,8 @@ interface Insight { type: string; title: string; body: string; }
 const CALORIE_GOAL = 2600;
 const PROTEIN_GOAL = 180;
 
-const INSIGHT_ICONS: Record<string, string> = {
-  protein: "💪", calories: "🔥", timing: "⏱️", consistency: "📈", carbs: "🌾", fat: "🥑", general: "⚡",
+const INSIGHT_ICONS: Record<string, IconName> = {
+  protein: "dumbbell", calories: "flame", timing: "clock", consistency: "chart", carbs: "leaf", fat: "droplet", general: "sparkle",
 };
 
 function computeStreak(allDates: string[]): number {
@@ -296,11 +297,11 @@ export default function DashboardPage() {
     { label: "Fat", current: Math.round(totalFat), goal: 70, color: "#32ADE6", unit: "g" },
   ];
 
-  const QUICK_ACTIONS = [
-    { label: "Log a Meal", href: "/dashboard/calories", icon: "🍽️", desc: "Photo, describe, or manual", tint: "#2f9e44" },
-    { label: "Grocery AI", href: "/dashboard/grocery", icon: "🛒", desc: "High-protein, on budget", tint: "#FF9F0A" },
-    { label: "Restaurants", href: "/dashboard/restaurants", icon: "🥗", desc: "Eat out smarter", tint: "#32ADE6" },
-    { label: "Scan Receipt", href: "/dashboard/receipts", icon: "📄", desc: "Track spend & nutrition", tint: "#a78bfa" },
+  const QUICK_ACTIONS: { label: string; href: string; icon: IconName; desc: string; tint: string }[] = [
+    { label: "Log a Meal", href: "/dashboard/calories", icon: "meal", desc: "Photo, describe, or manual", tint: "#2f9e44" },
+    { label: "Grocery AI", href: "/dashboard/grocery", icon: "cart", desc: "High-protein, on budget", tint: "#FF9F0A" },
+    { label: "Restaurants", href: "/dashboard/restaurants", icon: "store", desc: "Eat out smarter", tint: "#32ADE6" },
+    { label: "Scan Receipt", href: "/dashboard/receipts", icon: "receipt", desc: "Track spend & nutrition", tint: "#a78bfa" },
   ];
 
   const weeklyMax = Math.max(...weeklyData.map((d) => d.cals), targets.calories);
@@ -312,7 +313,7 @@ export default function DashboardPage() {
     <Link href="/dashboard/settings/billing"
       className="flex items-center justify-between gap-3 px-4 py-3 bg-lime/5 border border-lime/20 rounded-xl hover:bg-lime/10 hover:border-lime/30 transition-all group">
       <div className="flex items-center gap-3">
-        <span className="text-lg">⚡</span>
+        <Icon name="bolt" className="w-5 h-5 text-lime" />
         <div>
           <p className="text-text-primary text-sm font-medium">
             {aiRemaining === 0
@@ -343,13 +344,13 @@ export default function DashboardPage() {
         <div className="flex flex-col items-end gap-2 flex-shrink-0">
           {streak > 0 ? (
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-400/10 border border-orange-400/30 rounded-full animate-fade-in">
-              <span className="text-sm">🔥</span>
+              <Icon name="flame" className="w-3.5 h-3.5 text-orange-400" />
               <span className="num font-display font-black text-orange-400 text-sm">{streak}</span>
               <span className="text-orange-400/70 text-xs">day streak</span>
             </div>
           ) : (
             <Link href="/dashboard/calories" className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-border rounded-full hover:border-orange-400/40 transition-colors group">
-              <span className="text-sm grayscale group-hover:grayscale-0 transition-all">🔥</span>
+              <Icon name="flame" className="w-3.5 h-3.5 text-text-muted group-hover:text-orange-400 transition-colors" />
               <span className="text-text-secondary text-xs group-hover:text-text-primary transition-colors">Start a streak today</span>
             </Link>
           )}
@@ -436,7 +437,7 @@ export default function DashboardPage() {
                       style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(0.16,1,0.3,1)" }} />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-lg">💪</span>
+                    <Icon name="dumbbell" className="w-4 h-4 text-lime" />
                   </div>
                 </div>
                 <div className="flex-1">
@@ -485,7 +486,7 @@ export default function DashboardPage() {
                 })}
               </div>
               {weekTotal === 0 && (
-                <p className="text-center text-text-muted text-xs mt-4">Log meals through the week and watch your trend build 📈</p>
+                <p className="text-center text-text-muted text-xs mt-4">Log meals through the week to watch your trend build.</p>
               )}
             </div>
           )}
@@ -535,7 +536,7 @@ export default function DashboardPage() {
                     <div key={v.label} className="bg-surface border border-border rounded-xl p-3">
                       <p className="text-text-muted text-[10px] uppercase tracking-wider mb-1.5 flex items-center gap-1">
                         {v.label}
-                        {v.supp > 0 && <span className="text-lime/50" title="Includes supplement contribution">💊</span>}
+                        {v.supp > 0 && <Icon name="pill" className="w-3 h-3 text-lime/60" title="Includes supplement contribution" />}
                       </p>
                       <p className="num font-display font-bold text-base leading-none" style={{ color: v.color }}>
                         {total}<span className="text-text-muted text-[10px] font-normal ml-0.5">{v.unit}</span>
@@ -564,18 +565,18 @@ export default function DashboardPage() {
             </div>
             {logs.length === 0 ? (
               <div className="text-center py-8">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-3xl animate-pulse-slow">🍳</div>
-                <p className="font-display font-bold text-text-primary text-lg">Your plate's empty.</p>
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-lime animate-pulse-slow"><Icon name="meal" className="w-7 h-7" /></div>
+                <p className="font-display font-bold text-text-primary text-lg">Your plate&apos;s empty.</p>
                 <p className="text-text-muted text-sm mt-1 mb-5 max-w-xs mx-auto">Log your first meal to build your macros, streak, and AI insights.</p>
                 <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
-                  {[
-                    { icon: "📷", label: "Photo", tint: "#2f9e44" },
-                    { icon: "✏️", label: "Describe", tint: "#FF9F0A" },
-                    { icon: "⌨️", label: "Manual", tint: "#32ADE6" },
-                  ].map((m) => (
+                  {([
+                    { icon: "camera", label: "Photo", tint: "#2f9e44" },
+                    { icon: "edit", label: "Describe", tint: "#FF9F0A" },
+                    { icon: "calculator", label: "Manual", tint: "#32ADE6" },
+                  ] as { icon: IconName; label: string; tint: string }[]).map((m) => (
                     <Link key={m.label} href="/dashboard/calories"
                       className="flex flex-col items-center gap-1.5 py-3 bg-surface border border-border rounded-xl hover:border-border-bright hover:-translate-y-0.5 transition-all">
-                      <span className="w-9 h-9 rounded-lg flex items-center justify-center text-lg" style={{ background: `${m.tint}1a` }}>{m.icon}</span>
+                      <span className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: `${m.tint}1a`, color: m.tint }}><Icon name={m.icon} className="w-[18px] h-[18px]" /></span>
                       <span className="text-text-secondary text-xs font-medium">{m.label}</span>
                     </Link>
                   ))}
@@ -615,7 +616,7 @@ export default function DashboardPage() {
           <div className="bg-card border border-border rounded-2xl p-5">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <span className="text-base">💧</span>
+                <Icon name="droplet" className="w-4 h-4 text-cyan-app" />
                 <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider">Hydration</h3>
               </div>
               <span className="num font-mono text-cyan-app text-sm">{waterGlasses}<span className="text-text-muted text-xs">/{waterGoalGlasses} glasses</span></span>
@@ -629,7 +630,7 @@ export default function DashboardPage() {
             </p>
             {supplementWaterBonus > 0 && (
               <p className="text-cyan-app/50 text-[10px] mb-3">
-                💊 +{supplementWaterBonus}ml for your supplement stack
+                +{supplementWaterBonus}ml added for your supplement stack
               </p>
             )}
             {supplementWaterBonus === 0 && <div className="mb-2" />}
@@ -662,7 +663,7 @@ export default function DashboardPage() {
             <div className="bg-card border border-border rounded-2xl p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-base">💊</span>
+                  <Icon name="pill" className="w-4 h-4 text-lime" />
                   <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider">Supplements</h3>
                 </div>
                 <Link href="/dashboard/settings/supplements" className="text-text-muted text-xs hover:text-text-secondary transition-colors">Manage →</Link>
@@ -697,7 +698,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-2 gap-3">
               {QUICK_ACTIONS.map((a) => (
                 <Link key={a.href} href={a.href} className="bg-surface border border-border rounded-2xl p-4 hover:border-border-bright hover:-translate-y-0.5 transition-all group flex flex-col">
-                  <span className="w-10 h-10 rounded-xl flex items-center justify-center text-xl mb-2.5" style={{ background: `${a.tint}1f`, border: `1px solid ${a.tint}33` }}>{a.icon}</span>
+                  <span className="w-10 h-10 rounded-xl flex items-center justify-center mb-2.5" style={{ background: `${a.tint}1f`, border: `1px solid ${a.tint}33`, color: a.tint }}><Icon name={a.icon} className="w-5 h-5" /></span>
                   <h3 className="font-display font-bold text-text-primary text-xs group-hover:text-lime transition-colors leading-tight">{a.label}</h3>
                   <p className="text-text-muted text-[10px] mt-0.5 leading-tight">{a.desc}</p>
                 </Link>
@@ -719,7 +720,7 @@ export default function DashboardPage() {
                 <div className="space-y-3">
                   {insights.map((insight, i) => (
                     <div key={i} className="flex gap-3 p-3 bg-surface border border-border rounded-xl">
-                      <span className="text-base flex-shrink-0">{INSIGHT_ICONS[insight.type] || "⚡"}</span>
+                      <span className="text-lime flex-shrink-0 mt-0.5"><Icon name={INSIGHT_ICONS[insight.type] || "sparkle"} className="w-4 h-4" /></span>
                       <div>
                         <p className="text-text-primary text-xs font-medium mb-0.5">{insight.title}</p>
                         <p className="text-text-secondary text-[11px] leading-relaxed">{insight.body}</p>
@@ -744,7 +745,7 @@ export default function DashboardPage() {
         <div className="bg-card border border-border rounded-2xl p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <span className="text-lg">💧</span>
+              <Icon name="droplet" className="w-5 h-5 text-cyan-app" />
               <h3 className="font-display font-bold text-text-primary text-xs uppercase tracking-wider">Hydration</h3>
             </div>
             <span className="num font-mono text-cyan-app text-sm">{waterGlasses}<span className="text-text-muted text-xs">/{waterGoalGlasses} glasses</span></span>
@@ -757,7 +758,7 @@ export default function DashboardPage() {
             {waterMl >= adjustedWaterGoal ? "✓ Daily goal reached! Stay consistent." : `${adjustedWaterGoal - waterMl}ml left · ${(waterMl / 1000).toFixed(1)}L logged`}
           </p>
           {supplementWaterBonus > 0 && (
-            <p className="text-cyan-app/50 text-[10px] mb-3">💊 Goal +{supplementWaterBonus}ml for your supplement stack</p>
+            <p className="text-cyan-app/70 text-[10px] mb-3">Goal +{supplementWaterBonus}ml for your supplement stack</p>
           )}
           {supplementWaterBonus === 0 && <div className="mb-3" />}
           <div className="flex gap-2 flex-wrap">
@@ -823,7 +824,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 gap-3">
           {QUICK_ACTIONS.map((a) => (
             <Link key={a.href} href={a.href} className="bg-card border border-border rounded-2xl p-5 hover:border-border-bright active:scale-[0.98] transition-all group">
-              <span className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-3" style={{ background: `${a.tint}1f`, border: `1px solid ${a.tint}33` }}>{a.icon}</span>
+              <span className="w-12 h-12 rounded-xl flex items-center justify-center mb-3" style={{ background: `${a.tint}1f`, border: `1px solid ${a.tint}33`, color: a.tint }}><Icon name={a.icon} className="w-6 h-6" /></span>
               <h3 className="font-display font-bold text-text-primary text-sm group-hover:text-lime transition-colors">{a.label}</h3>
               <p className="text-text-muted text-xs mt-1">{a.desc}</p>
             </Link>
@@ -844,7 +845,7 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 {insights.map((insight, i) => (
                   <div key={i} className="flex gap-3 p-4 bg-surface border border-border rounded-xl">
-                    <span className="text-xl flex-shrink-0">{INSIGHT_ICONS[insight.type] || "⚡"}</span>
+                    <span className="text-lime flex-shrink-0 mt-0.5"><Icon name={INSIGHT_ICONS[insight.type] || "sparkle"} className="w-5 h-5" /></span>
                     <div>
                       <p className="text-text-primary text-sm font-medium mb-0.5">{insight.title}</p>
                       <p className="text-text-secondary text-xs leading-relaxed">{insight.body}</p>

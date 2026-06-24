@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Icon, type IconName } from "@/components/ui/Icon";
 
 interface Tip {
   type: string;
@@ -27,8 +28,8 @@ interface Suggestions {
   meals: Meal[];
 }
 
-const TIP_ICONS: Record<string, string> = {
-  protein: "💪", calories: "🔥", timing: "⏰", budget: "💰", consistency: "📈", habit: "🎯", general: "⚡",
+const TIP_ICONS: Record<string, IconName> = {
+  protein: "dumbbell", calories: "flame", timing: "clock", budget: "wallet", consistency: "chart", habit: "target", general: "sparkle",
 };
 
 const MEAL_COLORS = ["bg-lime/5 border-lime/15", "bg-amber-app/5 border-amber-app/15", "bg-cyan-app/5 border-cyan-app/15", "bg-surface border-border"];
@@ -191,7 +192,7 @@ export default function SuggestionsPage() {
             <div className="space-y-3">
               {suggestions.tips.map((tip, i) => (
                 <div key={i} className="bg-card border border-border rounded-2xl p-4 flex gap-4">
-                  <span className="text-2xl flex-shrink-0 mt-0.5">{TIP_ICONS[tip.type] ?? "⚡"}</span>
+                  <span className="text-lime flex-shrink-0 mt-0.5"><Icon name={TIP_ICONS[tip.type] ?? "sparkle"} className="w-6 h-6" /></span>
                   <div>
                     <p className="text-text-primary font-medium text-sm mb-1">{tip.title}</p>
                     <p className="text-text-secondary text-xs leading-relaxed">{tip.body}</p>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Icon } from "@/components/ui/Icon";
 
 const FEATURES_FREE = [
   "15 AI requests / month",
@@ -35,7 +36,7 @@ export function BillingContent({ tier: initialTier, aiUsed: initialAiUsed }: Bil
   const [loading, setLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
 
-  const successMsg = searchParams.get("success") ? "You're now on Pro! Welcome to Forage Pro. 🎉" : "";
+  const successMsg = searchParams.get("success") ? "You're now on Pro. Welcome to Forage Pro." : "";
 
   const handleUpgrade = async (withTrial = false) => {
     setLoading(true);
@@ -163,7 +164,7 @@ export function BillingContent({ tier: initialTier, aiUsed: initialAiUsed }: Bil
           <div className="space-y-2 mb-4">
             {FEATURES_PRO.map((f) => (
               <div key={f} className="flex items-center gap-2 text-xs text-text-secondary">
-                <span className="text-lime flex-shrink-0">✓</span>{f}
+                <Icon name="check" className="w-4 h-4 text-lime flex-shrink-0 mt-0.5" />{f}
               </div>
             ))}
           </div>

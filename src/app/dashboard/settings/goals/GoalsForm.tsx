@@ -3,18 +3,19 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ForageSpinner } from "@/components/ui/ForageSpinner";
+import { Icon, type IconName } from "@/components/ui/Icon";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-const GOALS = [
-  { id: "muscle_gain", emoji: "💪", label: "Build Muscle", color: "amber" },
-  { id: "fat_loss", emoji: "🔥", label: "Lose Fat", color: "orange" },
-  { id: "maintain", emoji: "⚖️", label: "Maintain & Optimize", color: "cyan" },
-  { id: "eat_healthier", emoji: "🥗", label: "Eat Healthier", color: "lime" },
-  { id: "performance", emoji: "⚡", label: "Athletic Performance", color: "lime" },
-  { id: "save_money", emoji: "💰", label: "Save Money on Food", color: "amber" },
-  { id: "medical", emoji: "🩺", label: "Medical / Condition", color: "cyan" },
-  { id: "general_wellness", emoji: "🌱", label: "General Wellness", color: "lime" },
+const GOALS: { id: string; icon: IconName; label: string; color: string }[] = [
+  { id: "muscle_gain", icon: "dumbbell", label: "Build Muscle", color: "amber" },
+  { id: "fat_loss", icon: "flame", label: "Lose Fat", color: "orange" },
+  { id: "maintain", icon: "scale", label: "Maintain & Optimize", color: "cyan" },
+  { id: "eat_healthier", icon: "leaf", label: "Eat Healthier", color: "lime" },
+  { id: "performance", icon: "bolt", label: "Athletic Performance", color: "lime" },
+  { id: "save_money", icon: "wallet", label: "Save Money on Food", color: "amber" },
+  { id: "medical", icon: "info", label: "Medical / Condition", color: "cyan" },
+  { id: "general_wellness", icon: "sparkle", label: "General Wellness", color: "lime" },
 ];
 
 const SELECTED_MAP: Record<string, string> = {
@@ -81,7 +82,7 @@ export function GoalsForm({ userId, initialGoals, initialMealsPerWeek }: GoalsFo
                 className={`text-left p-4 rounded-xl border transition-all ${isSelected ? SELECTED_MAP[goal.color] : "bg-surface border-border hover:border-border-bright"}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="text-xl">{goal.emoji}</span>
+                    <span className="text-text-secondary"><Icon name={goal.icon} className="w-5 h-5" /></span>
                     <span className="font-display font-bold text-text-primary text-sm">{goal.label}</span>
                   </div>
                   {isSelected && (

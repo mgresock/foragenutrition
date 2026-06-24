@@ -4,19 +4,20 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { ForageSpinner } from "@/components/ui/ForageSpinner";
+import { Icon, type IconName } from "@/components/ui/Icon";
 import { computeTargets, goalFromGoals } from "@/lib/nutrition";
 
 interface DayStat { date: string; cals: number; protein: number; meals: number; }
 
-const ACHIEVEMENTS = [
-  { id: "first_log", icon: "🍽️", label: "First Log", test: (s: Stats) => s.totalMeals >= 1 },
-  { id: "streak7", icon: "🔥", label: "7-Day Streak", test: (s: Stats) => s.streak >= 7 },
-  { id: "streak30", icon: "⚡", label: "30-Day Streak", test: (s: Stats) => s.streak >= 30 },
-  { id: "meals100", icon: "💯", label: "100 Meals", test: (s: Stats) => s.totalMeals >= 100 },
-  { id: "protein", icon: "💪", label: "Protein Beast", test: (s: Stats) => s.proteinHitDays >= 7 },
-  { id: "consistent", icon: "📈", label: "Consistent", test: (s: Stats) => s.adherence >= 80 },
-  { id: "weighin", icon: "⚖️", label: "Weigh-In", test: (s: Stats) => s.weighIns >= 1 },
-  { id: "weighin5", icon: "🎯", label: "Tracking Trend", test: (s: Stats) => s.weighIns >= 5 },
+const ACHIEVEMENTS: { id: string; icon: IconName; label: string; test: (s: Stats) => boolean }[] = [
+  { id: "first_log", icon: "meal", label: "First Log", test: (s: Stats) => s.totalMeals >= 1 },
+  { id: "streak7", icon: "flame", label: "7-Day Streak", test: (s: Stats) => s.streak >= 7 },
+  { id: "streak30", icon: "bolt", label: "30-Day Streak", test: (s: Stats) => s.streak >= 30 },
+  { id: "meals100", icon: "trophy", label: "100 Meals", test: (s: Stats) => s.totalMeals >= 100 },
+  { id: "protein", icon: "dumbbell", label: "Protein Beast", test: (s: Stats) => s.proteinHitDays >= 7 },
+  { id: "consistent", icon: "chart", label: "Consistent", test: (s: Stats) => s.adherence >= 80 },
+  { id: "weighin", icon: "scale", label: "Weigh-In", test: (s: Stats) => s.weighIns >= 1 },
+  { id: "weighin5", icon: "target", label: "Tracking Trend", test: (s: Stats) => s.weighIns >= 5 },
 ];
 
 interface Stats {
@@ -98,12 +99,12 @@ export default function InsightsPage() {
         <h1 className="font-display font-black text-4xl sm:text-5xl uppercase tracking-tight leading-[0.95] text-text-primary">Insights</h1>
         <p className="text-text-secondary mt-2 mb-8">Adherence, body comp, spend, and milestones in one view.</p>
         <div className="bg-card border border-border rounded-2xl p-12 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-3xl animate-pulse-slow">📊</div>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-lime animate-pulse-slow"><Icon name="chart" className="w-7 h-7" /></div>
           <p className="font-display font-bold text-text-primary text-lg">No insights yet.</p>
           <p className="text-text-muted text-sm mt-1.5 mb-6 max-w-sm mx-auto">Log meals for a few days and your adherence trend, streak, body comp, and achievements will unlock here.</p>
           <div className="flex flex-wrap items-center justify-center gap-2 mb-7">
             {ACHIEVEMENTS.slice(0, 5).map((a) => (
-              <span key={a.id} className="w-10 h-10 rounded-xl bg-surface border border-border flex items-center justify-center text-lg opacity-40 grayscale" title={a.label}>{a.icon}</span>
+              <span key={a.id} className="w-10 h-10 rounded-xl bg-surface border border-border flex items-center justify-center text-text-muted opacity-50" title={a.label}><Icon name={a.icon} className="w-5 h-5" /></span>
             ))}
           </div>
           <Link href="/dashboard/calories" className="inline-flex items-center gap-2 bg-lime text-canvas font-display font-bold px-6 py-3.5 rounded-xl uppercase tracking-wider text-sm hover:bg-lime-glow transition-all shadow-lime-sm">Log your first meal →</Link>
@@ -193,8 +194,8 @@ export default function InsightsPage() {
           {ACHIEVEMENTS.map((a) => {
             const earned = a.test(stats);
             return (
-              <div key={a.id} className={`flex flex-col items-center gap-1.5 text-center ${earned ? "" : "opacity-30 grayscale"}`} title={a.label}>
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${earned ? "bg-lime/10 border border-lime/30" : "bg-surface border border-border"}`}>{a.icon}</div>
+              <div key={a.id} className={`flex flex-col items-center gap-1.5 text-center ${earned ? "" : "opacity-40"}`} title={a.label}>
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${earned ? "bg-lime/10 border border-lime/30 text-lime" : "bg-surface border border-border text-text-muted"}`}><Icon name={a.icon} className="w-6 h-6" /></div>
                 <span className="text-text-muted text-[9px] leading-tight">{a.label}</span>
               </div>
             );

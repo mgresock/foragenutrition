@@ -5,16 +5,17 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ForageSpinner } from "@/components/ui/ForageSpinner";
 import { OnboardingShell } from "@/components/onboarding/OnboardingShell";
+import { Icon, type IconName } from "@/components/ui/Icon";
 
-const GOALS = [
-  { id: "muscle_gain", emoji: "💪", label: "Build Muscle", description: "Caloric surplus, high protein, progressive overload nutrition support", tags: ["Bulking", "Gym-focused", "High protein"], color: "amber" },
-  { id: "fat_loss", emoji: "🔥", label: "Lose Fat", description: "Controlled deficit, preserve lean mass, sustainable approach", tags: ["Cutting", "Deficit", "Body recomp"], color: "orange" },
-  { id: "maintain", emoji: "⚖️", label: "Maintain & Optimize", description: "Eat at maintenance, improve food quality, feel consistently energized", tags: ["Maintenance", "Clean eating"], color: "cyan" },
-  { id: "eat_healthier", emoji: "🥗", label: "Eat Healthier", description: "Better whole foods, less processed junk, improved daily nutrition", tags: ["Whole foods", "Anti-inflammatory"], color: "lime" },
-  { id: "performance", emoji: "⚡", label: "Athletic Performance", description: "Fuel training, optimize recovery, sport-specific macros", tags: ["Performance", "Recovery", "Pre/post workout"], color: "lime" },
-  { id: "save_money", emoji: "💰", label: "Save Money on Food", description: "Eat well on a tight budget — maximize nutrition per dollar", tags: ["Budget", "Meal prep", "Value"], color: "amber" },
-  { id: "medical", emoji: "🩺", label: "Medical / Condition", description: "Manage specific conditions (diabetes, heart health, food allergies)", tags: ["Health condition", "Doctor-guided"], color: "cyan" },
-  { id: "general_wellness", emoji: "🌱", label: "General Wellness", description: "Just want to feel better and build sustainable healthy habits", tags: ["Lifestyle", "Habits"], color: "lime" },
+const GOALS: { id: string; icon: IconName; label: string; description: string; tags: string[]; color: string }[] = [
+  { id: "muscle_gain", icon: "dumbbell", label: "Build Muscle", description: "Caloric surplus, high protein, progressive overload nutrition support", tags: ["Bulking", "Gym-focused", "High protein"], color: "amber" },
+  { id: "fat_loss", icon: "flame", label: "Lose Fat", description: "Controlled deficit, preserve lean mass, sustainable approach", tags: ["Cutting", "Deficit", "Body recomp"], color: "orange" },
+  { id: "maintain", icon: "scale", label: "Maintain & Optimize", description: "Eat at maintenance, improve food quality, feel consistently energized", tags: ["Maintenance", "Clean eating"], color: "cyan" },
+  { id: "eat_healthier", icon: "leaf", label: "Eat Healthier", description: "Better whole foods, less processed junk, improved daily nutrition", tags: ["Whole foods", "Anti-inflammatory"], color: "lime" },
+  { id: "performance", icon: "bolt", label: "Athletic Performance", description: "Fuel training, optimize recovery, sport-specific macros", tags: ["Performance", "Recovery", "Pre/post workout"], color: "lime" },
+  { id: "save_money", icon: "wallet", label: "Save Money on Food", description: "Eat well on a tight budget — maximize nutrition per dollar", tags: ["Budget", "Meal prep", "Value"], color: "amber" },
+  { id: "medical", icon: "info", label: "Medical / Condition", description: "Manage specific conditions (diabetes, heart health, food allergies)", tags: ["Health condition", "Doctor-guided"], color: "cyan" },
+  { id: "general_wellness", icon: "sparkle", label: "General Wellness", description: "Just want to feel better and build sustainable healthy habits", tags: ["Lifestyle", "Habits"], color: "lime" },
 ];
 
 const SELECTED_MAP: Record<string, string> = { lime: "border-lime/60 bg-lime/15 shadow-lime-sm", amber: "border-amber-app/60 bg-amber-app/15", cyan: "border-cyan-app/60 bg-cyan-app/15", orange: "border-orange-400/60 bg-orange-400/15" };
@@ -78,7 +79,7 @@ export default function GoalsPage() {
               <button key={goal.id} onClick={() => toggle(goal.id)}
                 className={`text-left p-4 rounded-xl border transition-all duration-200 ${isSelected ? SELECTED_MAP[goal.color] : "bg-surface border-border hover:border-border-bright"}`}>
                 <div className="flex items-start justify-between mb-2">
-                  <span className="text-2xl">{goal.emoji}</span>
+                  <span className={isSelected ? "text-lime" : "text-text-secondary"}><Icon name={goal.icon} className="w-6 h-6" /></span>
                   {isSelected && <div className="w-5 h-5 rounded-full bg-lime flex items-center justify-center flex-shrink-0"><svg className="w-3 h-3 text-canvas" fill="none" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></div>}
                 </div>
                 <h3 className="font-display font-bold text-text-primary text-sm mb-1">{goal.label}</h3>

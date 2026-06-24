@@ -219,7 +219,7 @@ export function FoodSearchTab({ onLog, saving, recents = [], onRelog }: {
           {selected.grade && /[de]/i.test(selected.grade) && (
             <button onClick={() => findSwap(selected.name.replace(/\b(original|classic|regular)\b/gi, "").trim())}
               className="w-full mb-3 flex items-center justify-center gap-2 bg-amber-app/10 border border-amber-app/30 text-amber-app rounded-xl py-2.5 text-sm transition-all hover:bg-amber-app/15">
-              ⚡ Nutri-Score {selected.grade.toUpperCase()} — find a higher-protein swap
+              Nutri-Score {selected.grade.toUpperCase()} — find a higher-protein swap
             </button>
           )}
 

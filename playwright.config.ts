@@ -10,9 +10,16 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "line" : "list",
+  // Next.js dev compiles each route on first hit; with parallel workers all
+  // hitting cold routes after a clean `.next`, navigations can exceed the 30s
+  // default. Give them headroom so cold runs don't false-fail (a real hang
+  // still trips the 60s limits).
+  timeout: 60_000,
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
+    navigationTimeout: 60_000,
+    actionTimeout: 30_000,
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },

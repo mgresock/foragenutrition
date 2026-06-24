@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ForageSpinner } from "@/components/ui/ForageSpinner";
+import { Icon, type IconName } from "@/components/ui/Icon";
 import { fetchNearbyStores, type NearbyStore } from "@/lib/overpass";
 
 interface GroceryItem {
@@ -580,7 +581,7 @@ export default function GroceryPage() {
                 <div key={name} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm transition-all ${selected ? "bg-lime/10 border-lime/40 text-lime" : "bg-surface border-border text-text-secondary"}`}>
                   <button onClick={() => toggleStore(name)} className="flex items-center gap-1.5">
                     {selected && <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 14 14"><path d="M2 7l4 4 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                    <span className="text-text-muted text-[10px] mr-0.5">📍</span>
+                    <Icon name="store" className="w-3 h-3 text-text-muted mr-0.5 flex-shrink-0" />
                     <span className="font-medium">{name}</span>
                   </button>
                   <button onClick={() => removeManualStore(name)} className="text-text-muted/50 hover:text-red-400 transition-colors ml-1 text-xs">✕</button>
@@ -690,7 +691,7 @@ export default function GroceryPage() {
         </div>
       ) : list.length === 0 ? (
         <div className="bg-card border border-border rounded-2xl p-12 text-center">
-          <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-4xl animate-pulse-slow">🛒</div>
+          <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-lime animate-pulse-slow"><Icon name="cart" className="w-9 h-9" /></div>
           <h3 className="font-display font-bold text-text-primary text-xl mb-2">Let&apos;s build your week.</h3>
           <p className="text-text-secondary text-sm mb-5 max-w-sm mx-auto">
             {selectedStores.length > 0
@@ -698,8 +699,8 @@ export default function GroceryPage() {
               : "Pick your local stores above, or hit Generate and AI plans 7 days of meals + the exact items to buy."}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-2 mb-7 text-xs">
-            {[{ i: "💪", t: "High-protein" }, { i: "💸", t: "On budget" }, { i: "🗓️", t: "7-day plan" }].map((b) => (
-              <span key={b.t} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-border rounded-full text-text-secondary">{b.i} {b.t}</span>
+            {[{ icon: "dumbbell", t: "High-protein" }, { icon: "wallet", t: "On budget" }, { icon: "calendar", t: "7-day plan" }].map((b) => (
+              <span key={b.t} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-border rounded-full text-text-secondary"><Icon name={b.icon as IconName} className="w-3.5 h-3.5 text-text-muted" /> {b.t}</span>
             ))}
           </div>
           <button

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getSupplementEffect } from "@/lib/supplementEffects";
+import { Icon } from "@/components/ui/Icon";
 
 interface Supplement {
   id: string;
@@ -153,7 +154,7 @@ export default function SupplementsPage() {
             return (
               <div key={rec.name} className={`bg-card border rounded-2xl p-4 transition-all ${added ? "border-lime/20" : "border-border hover:border-border-bright"}`}>
                 <div className="flex items-start gap-3">
-                  <span className="text-xl flex-shrink-0 mt-0.5">{rec.emoji}</span>
+                  <span className="text-lime flex-shrink-0 mt-0.5"><Icon name="pill" className="w-5 h-5" /></span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <p className="text-text-primary text-sm font-medium leading-tight">{rec.name}</p>
@@ -173,7 +174,7 @@ export default function SupplementsPage() {
                     <p className="text-text-muted/70 text-[10px] leading-relaxed mb-1.5">{rec.why}</p>
                     {getSupplementEffect(rec.name)?.tag && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-lime/10 border border-lime/20 rounded-full text-lime text-[9px] font-medium">
-                        💊 {getSupplementEffect(rec.name)!.tag}
+                        {getSupplementEffect(rec.name)!.tag}
                       </span>
                     )}
                   </div>
@@ -254,7 +255,7 @@ export default function SupplementsPage() {
         <div className="space-y-2">{[1, 2, 3].map((i) => <div key={i} className="h-16 bg-card border border-border rounded-2xl animate-pulse" />)}</div>
       ) : supplements.length === 0 ? (
         <div className="text-center py-10 bg-card border border-border rounded-2xl">
-          <p className="text-4xl mb-3">💊</p>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-lime"><Icon name="pill" className="w-7 h-7" /></div>
           <p className="text-text-muted text-sm">No supplements added yet.</p>
           <p className="text-text-muted text-xs mt-1">Add from recommendations above or enter a custom one.</p>
         </div>
@@ -283,7 +284,7 @@ export default function SupplementsPage() {
                 </p>
                 {s.active && getSupplementEffect(s.name)?.tag && (
                   <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-lime/10 border border-lime/20 rounded-full text-lime text-[9px] font-medium">
-                    💊 {getSupplementEffect(s.name)!.tag}
+                    {getSupplementEffect(s.name)!.tag}
                   </span>
                 )}
               </div>

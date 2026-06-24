@@ -38,6 +38,17 @@ Tailwind config keys: `canvas`, `surface`, `card`, `border`, `border-bright`, `l
 - **`shadow-card`/`shadow-card-hover` are `none`** (flat broadsheet); only `shadow-lime-glow`/`lime-sm` remain, for primary CTAs.
 - Hardcoded data-viz colors (ring/chart strokes) use the literal dark green `#2f9e44`. Old greens `#34C759`/`#30D158`/`#248A3D`/`#62e23f` and grays `#2C2C2E`/`#1C1C1E`/`#3A3A3C` (and the interim paper grays `#0a0d08`/`#10140d`/`#161a10`/`#282c20`/`#3c4230`) were swept out of `src/`.
 
+## Iconography (no emojis)
+- **`src/components/ui/Icon.tsx`** — a clean SVG line-icon set (`<Icon name="meal|search|camera|cart|pill|flame|droplet|dumbbell|...">`). Use this instead of emojis in UI chrome — emojis read as "vibecoded". Icons are decorative (`aria-hidden`) by default since they pair with text labels; pass `title` to give a standalone icon an accessible name. Colored "tile" pattern: wrap in a `w-10 h-10 rounded-xl` span with `style={{ background: `${tint}1f`, border, color: tint }}`.
+- Emojis were swept out of all visible chrome (dashboard, calories, settings, grocery, insights, social, suggestions, receipts, onboarding, billing, supplements, GoalsForm). `✓ ✕ → ↺` text glyphs are fine to keep. The `FUN_FACTS` array in `dashboard/page.tsx` still has an `emoji` field but it is **not rendered** (DailyFact uses an `info` Icon).
+
+## Accessibility (WCAG / ADA)
+- **Contrast**: `text-muted` is `#868c72` (≥4.9:1 on canvas/surface/card — AA). Do NOT revert to `#565c46` (failed at ~2.5:1). All token text colors now pass AA; `lime`/`amber`/`cyan` pass as text on dark. Verify new color pairs with the contrast snippet (relative-luminance ratio ≥ 4.5 for body text).
+- **Reduced motion**: `globals.css` has a `@media (prefers-reduced-motion: reduce)` block that neutralizes animations/transitions (the `animate-pulse-slow` empty-state icons, etc.).
+- **Skip link**: `.skip-link` in `globals.css`; rendered in `dashboard/layout.tsx` (`<a href="#main-content">`) with `<main id="main-content" tabIndex={-1}>`.
+- **Icon-only buttons** carry `aria-label`s (e.g. the empty-state quick-log tiles: `aria-label="Log a meal via …"`). Keep this up when adding icon-only controls.
+- **E2E selectors**: calorie tab labels are now plain text ("Search", "Build", "Photo", …) — the food-search test targets `getByRole("button", { name: "Search", exact: true })`.
+
 ## Fonts
 - **Archivo Black** — `font-display` (headlines, big numerals, section labels — heavy, uppercase feel)
 - **Hind** — `font-body` (default body text)
@@ -369,6 +380,7 @@ Always use `process.env.NEXT_PUBLIC_SITE_URL` — never `req.headers.get("origin
 - Adding Playwright does NOT affect the Next.js build/runtime — `e2e/` and the config are test-only.
 - `e2e/meal-builder.spec.ts` (gated) covers: build→save→reopen→edit, Search/backdating render, Macro Calc render. Helper `scripts/run-e2e-temp-user.mjs` creates a confirmed throwaway user via service role, runs the suite with creds, then deletes it.
 - **GOTCHA: clean `.next` before running E2E if you just ran `next build`.** The production `.next` collides with the `next dev` the test harness starts → the authed login tests time out (looks like a regression, isn't). `rm -rf .next` first. Also kill stray `node` dev servers (`reuseExistingServer` reuses a hung one on :3000).
+- **Cold-compile timeouts ≠ regressions.** With a clean `.next`, parallel workers each cold-compile a heavy route on first hit; before the timeout bump this exceeded 30s and failed the calories/macros specs intermittently. `playwright.config.ts` now sets `timeout: 60_000` + `navigationTimeout: 60_000`. If a heavy spec still flakes, warm the route first (`curl` it against a running `npm run dev`) — a single `goto` always works; only the 7-way cold stampede is slow.
 
 ## Branches
 - **`main` and `master` are unified** — same commit, kept in lockstep. Workflow each commit: commit on `master` (main project root) → `git push origin master:master` AND `git push origin master:main` → `git -C .claude/worktrees/<id> reset --hard origin/main`. Vercel deploys `main`. Confirm with `git rev-parse origin/main origin/master` (must match).

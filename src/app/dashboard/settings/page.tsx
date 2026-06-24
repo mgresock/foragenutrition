@@ -3,13 +3,14 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { Icon, type IconName } from "@/components/ui/Icon";
 
-const SETTINGS = [
-  { label: "Plan & Billing", desc: "Upgrade to Pro · manage subscription", href: "/dashboard/settings/billing", badge: "Upgrade", icon: "⚡", tint: "#FF9F0A" },
-  { label: "Profile & Body Stats", desc: "Age, height, weight, biological sex", href: "/dashboard/settings/profile", icon: "🧍", tint: "#2f9e44" },
-  { label: "Nutrition Goals", desc: "Goals and meals per week", href: "/dashboard/settings/goals", icon: "🎯", tint: "#32ADE6" },
-  { label: "Grocery Preferences", desc: "Budget and ZIP code", href: "/dashboard/settings/grocery", icon: "🛒", tint: "#a78bfa" },
-  { label: "Supplements", desc: "Your daily supplement stack", href: "/dashboard/settings/supplements", icon: "💊", tint: "#2f9e44" },
+const SETTINGS: { label: string; desc: string; href: string; badge?: string; icon: IconName; tint: string }[] = [
+  { label: "Plan & Billing", desc: "Upgrade to Pro · manage subscription", href: "/dashboard/settings/billing", badge: "Upgrade", icon: "billing", tint: "#FF9F0A" },
+  { label: "Profile & Body Stats", desc: "Age, height, weight, biological sex", href: "/dashboard/settings/profile", icon: "user", tint: "#2f9e44" },
+  { label: "Nutrition Goals", desc: "Goals and meals per week", href: "/dashboard/settings/goals", icon: "target", tint: "#32ADE6" },
+  { label: "Grocery Preferences", desc: "Budget and ZIP code", href: "/dashboard/settings/grocery", icon: "cart", tint: "#a78bfa" },
+  { label: "Supplements", desc: "Your daily supplement stack", href: "/dashboard/settings/supplements", icon: "pill", tint: "#2f9e44" },
 ];
 
 export default function SettingsPage() {
@@ -32,7 +33,7 @@ export default function SettingsPage() {
         {SETTINGS.map((s) => (
           <Link key={s.label} href={s.href}
             className="bg-card border border-border rounded-2xl p-4 flex items-center gap-4 hover:border-border-bright hover:-translate-y-0.5 transition-all cursor-pointer group block">
-            <span className="w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: `${s.tint}1f`, border: `1px solid ${s.tint}33` }}>{s.icon}</span>
+            <span className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `${s.tint}1f`, border: `1px solid ${s.tint}33`, color: s.tint }}><Icon name={s.icon} className="w-5 h-5" /></span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <h3 className="font-display font-bold text-text-primary text-sm group-hover:text-lime transition-colors">{s.label}</h3>

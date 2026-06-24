@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { ForageSpinner } from "@/components/ui/ForageSpinner";
+import { Icon } from "@/components/ui/Icon";
 import Link from "next/link";
 
 type Profile = {
@@ -61,7 +62,7 @@ function FriendCard({ f }: { f: FriendProgress }) {
               <span className="text-text-primary font-medium text-sm truncate">{f.display_name}</span>
               {f.streak > 0 && (
                 <span className="flex items-center gap-1 px-1.5 py-0.5 bg-orange-400/10 border border-orange-400/20 rounded-full text-orange-400 text-[10px]">
-                  🔥 {f.streak}d
+                  <Icon name="flame" className="w-2.5 h-2.5" /> {f.streak}d
                 </span>
               )}
             </div>
@@ -415,7 +416,7 @@ export default function SocialPage() {
 
           {friends.length === 0 ? (
             <div className="bg-card border border-border rounded-2xl p-10 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-3xl animate-pulse-slow">🤝</div>
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-lime animate-pulse-slow"><Icon name="users" className="w-7 h-7" /></div>
               <div className="font-display font-bold text-text-primary text-lg">Your circle is empty</div>
               <div className="text-text-muted text-sm mt-1 max-w-xs mx-auto">Add friends with their code above to see their daily calorie &amp; protein progress — and keep each other accountable.</div>
             </div>
@@ -471,7 +472,7 @@ export default function SocialPage() {
 
           {groups.length === 0 ? (
             <div className="bg-card border border-border rounded-2xl p-10 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-3xl animate-pulse-slow">💪</div>
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-lime/10 border border-lime/20 flex items-center justify-center text-lime animate-pulse-slow"><Icon name="dumbbell" className="w-7 h-7" /></div>
               <div className="font-display font-bold text-text-primary text-lg">No groups yet</div>
               <div className="text-text-muted text-sm mt-1 max-w-xs mx-auto">Create a crew or join with an invite code to compete on streaks and protein goals together.</div>
             </div>

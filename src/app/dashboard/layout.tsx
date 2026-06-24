@@ -20,8 +20,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex min-h-screen bg-canvas">
+      <a href="#main-content" className="skip-link">Skip to content</a>
       <Sidebar initialProfile={initialProfile} />
-      <main className="flex-1 lg:ml-64 min-h-screen overflow-x-hidden pt-14 lg:pt-0">{children}</main>
+      <main id="main-content" tabIndex={-1} className="flex-1 lg:ml-64 min-h-screen overflow-x-hidden pt-14 lg:pt-0">{children}</main>
 
       {/* Persistent quick-log FAB */}
       <Link href="/dashboard/calories" aria-label="Log a meal"
